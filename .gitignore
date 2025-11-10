@@ -1,6 +1,54 @@
-node_modules/
-.env
+# Build output
 bin/
 obj/
-*.user
+
+# VS Code settings
+.vscode/
+
+# Visual Studio
 .vs/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET build artifacts
+*.dll
+*.exe
+*.pdb
+*.cache
+*.config
+*.log
+*.manifest
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nuget.props
+*.nuget.targets
+*.dgspec.json
+*.nuget.cache
+
+# Node / Frontend
+node_modules/
+package-lock.json
+
+# Environment files
+.env
+
+# Test results
+TestResults/
+*.coverage
+*.coveragexml
+
+# Generated files
+Generated_Code/
+
+# Miscellaneous
+*.tmp
+*.bak
+*.swp
