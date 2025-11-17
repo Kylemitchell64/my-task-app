@@ -18,7 +18,6 @@ obj/
 *.exe
 *.pdb
 *.cache
-*.config
 *.log
 *.manifest
 
@@ -35,7 +34,6 @@ artifacts/
 
 # Node / Frontend
 node_modules/
-package-lock.json
 dist/                  # Frontend build output (e.g., Angular/React/Vue)
 
 # Environment files
@@ -52,7 +50,6 @@ Generated_Code/
 
 # Docker
 docker-compose.override.yml   # Local override file (if you use Docker Compose)
-.dockerignore                 # Optional: ignore Docker ignore itself if needed
 
 # Miscellaneous
 *.tmp
