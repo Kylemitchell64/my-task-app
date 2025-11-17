@@ -1,0 +1,51 @@
+# Node.js dependencies folder
+# We don't need node_modules in the Docker build context because we will install packages inside the container
+my-todo-app/node_modules
+
+# Environment variable file
+# Contains sensitive information, should not be copied into the Docker image
+my-todo-app/.env
+
+# Build output folder for Node.js frontend
+# The dist folder will be rebuilt during the Docker build, so we ignore it
+my-todo-app/dist
+
+
+# .NET build output folder
+# Binary files are generated during build inside the Docker container
+TodoApi/bin
+
+# .NET intermediate object files
+# Temporary build files not needed in Docker context
+TodoApi/obj
+
+# Visual Studio workspace folder
+# IDE-specific files that are not required in the container
+TodoApi/.vs
+
+# Development environment settings file
+# Often contains sensitive info or local configs
+TodoApi/appsettings.Development.json
+
+
+# Git metadata folder
+# Git information is irrelevant to the Docker image
+.git
+
+# Git ignore rules file
+# Not needed inside the Docker build context
+.gitignore
+
+
+# VS Code workspace settings folder
+# Editor-specific settings, not needed in the image
+.vscode
+
+
+# Log files
+# Runtime logs are not needed in the build context
+*.log
+
+# macOS system files
+# Hidden OS files that should not be copied
+*.DS_Store
