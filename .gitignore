@@ -36,9 +36,11 @@ artifacts/
 # Node / Frontend
 node_modules/
 package-lock.json
+dist/                  # Frontend build output (e.g., Angular/React/Vue)
 
 # Environment files
 .env
+appsettings.Development.json   # Local development settings
 
 # Test results
 TestResults/
@@ -47,6 +49,10 @@ TestResults/
 
 # Generated files
 Generated_Code/
+
+# Docker
+docker-compose.override.yml   # Local override file (if you use Docker Compose)
+.dockerignore                 # Optional: ignore Docker ignore itself if needed
 
 # Miscellaneous
 *.tmp
