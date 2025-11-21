@@ -4,27 +4,25 @@ using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 // removed this to add my real database
 // builder.Services.AddDbContext<TodoContext>(options =>
 //     options.UseSqlite("Data Source=todo.db"));
 
-//didn't work
+// didn't work
 // builder.Services.AddDbContext<TodoContext>(options =>
 //     options.UseNpgsql("postgresql://postgres:[Killapilla200!]@db.okhzxsfgyefzouihxqud.supabase.co:5432/postgres"));
 
+// Use PostgreSQL connection string from appsettings.json
 builder.Services.AddDbContext<TodoContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
-    .AllowAnyHeader()
-    .AllowAnyMethod();
+        policy.WithOrigins("http://localhost:5173") // React dev server URL
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
@@ -35,8 +33,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-app.UseCors("AllowReact");  //Browsers block requests between different ports for security. 
-                            // CORS says "it's okay, tkjhhese two apps are allowed to talk."
+
+app.UseCors("AllowReact");  // Browsers block requests between different ports for security. 
+                            // CORS says "it's okay, these two apps are allowed to talk."
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -45,13 +44,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection(); //was causing Failed to determine the https port for redirect.
+//app.UseHttpsRedirection(); // was causing Failed to determine the https port for redirect.
 
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
-
 
 // app.MapGet("/weatherforecast", () =>
 // {
@@ -68,13 +66,20 @@ var summaries = new[]
 // .WithName("GetWeatherForecast")
 // .WithOpenApi();
 
-app.MapControllers();
+app.UseDefaultFiles(); // Serve index.html by default
+app.UseStaticFiles();  // Serve static files from wwwroot folder
+
+app.MapControllers();   // Map API controllers
+
 // app.AddCors(policy =>
 // {
 //     policy.AllowAnyHeader();
 //     policy.AllowAnyMethod();
-//     policy.AllowAnyOrigin(); //allows all, only allow one 
+//     policy.AllowAnyOrigin(); // allows all, only allow one 
 // });
+
+// Fallback to index.html for SPA routes
+app.MapFallbackToFile("index.html"); // ensures React SPA routing works
 
 app.Run();
 

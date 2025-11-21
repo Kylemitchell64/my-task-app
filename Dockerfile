@@ -9,9 +9,8 @@ WORKDIR /src
 COPY my-todo-app/ ./my-todo-app/
 
 # Install dependencies and build the React app
+# Vite outputs build into /dist by default
 RUN cd my-todo-app && npm install && npm run build
-
-
 
 # --- Build .NET Backend ---
 # Use .NET SDK to build the API
@@ -24,9 +23,8 @@ WORKDIR /src
 COPY TodoApi/ ./TodoApi/
 
 # Publish the .NET API in Release mode
-RUN dotnet publish TodoApi/TodoApi.csproj -c Release -o /app/publish
-
-
+# Output goes to /src/publish to keep it consistent and accessible in final image
+RUN dotnet publish TodoApi/TodoApi.csproj -c Release -o /src/publish
 
 # --- Final Runtime Image ---
 # Use lightweight ASP.NET runtime for running the final app
@@ -35,16 +33,18 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 # Set working directory for the final container
 WORKDIR /app
 
-# Copy backend publish output from the backend-build stage
-COPY --from=backend-build /app/publish ./publish
+# Copy backend publish output from the backend-build stage directly into /app
+COPY --from=backend-build /src/publish .
 
 # Copy React build output into the API's wwwroot folder
-COPY --from=frontend-build /src/my-todo-app/dist/ ./publish/wwwroot/
-
-
+# React (Vite) build output is in /dist
+COPY --from=frontend-build /src/my-todo-app/dist/ ./wwwroot/
 
 # Expose port 8080 for the API
 EXPOSE 8080
 
+# Optional: Ensure the container runs as a non-root user (safer for production)
+# USER appuser
+
 # Start the API
-CMD ["dotnet", "TodoApi.dll"]
+ENTRYPOINT ["dotnet", "TodoApi.dll"]
