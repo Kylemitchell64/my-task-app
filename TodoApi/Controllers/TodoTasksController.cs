@@ -40,13 +40,31 @@ namespace TodoApi.Controllers
 
         // PUT: api/TodoTasks/5 - Update task
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTodoTask(int id, TodoTask task)
+        public async Task<IActionResult> PutTodoTask(int id, [FromBody] TodoTask updatedTask)
         {
-            if (id != task.Id) return BadRequest();
-            _context.Entry(task).State = EntityState.Modified;
+            if (id != updatedTask.Id)
+                return BadRequest("ID mismatch");
+
+            var existingTask = await _context.TodoTasks.FindAsync(id);
+            if (existingTask == null)
+                return NotFound();
+
+            existingTask.Title = updatedTask.Title;
+            existingTask.Description = updatedTask.Description;
+            existingTask.IsCompleted = updatedTask.IsCompleted;
+            existingTask.Category = updatedTask.Category;
+            existingTask.EstimatedMinutes = updatedTask.EstimatedMinutes;
+
             await _context.SaveChangesAsync();
+
             return NoContent();
         }
+
+
+
+
+
+
         // DELETE: api/TodoTasks/5 - Delete task
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTodoTask(int id)

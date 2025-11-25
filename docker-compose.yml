@@ -1,0 +1,27 @@
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: my-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Killapilla200!
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: my-fullstack-app
+    depends_on:
+      - postgres
+    ports:
+      - "5000:8080"
+    environment:
+      DOTNET_CONNECTION_STRING: "Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=Killapilla200!"
+
+volumes:
+  postgres-data:

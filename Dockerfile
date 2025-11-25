@@ -40,11 +40,20 @@ COPY --from=backend-build /src/publish .
 # React (Vite) build output is in /dist
 COPY --from=frontend-build /src/my-todo-app/dist/ ./wwwroot/
 
+# Copy entrypoint script into the container
+# This script will previously run migrations before starting the API (NOT ANYMORE)
+COPY TodoApi/entrypoint.sh .
+
+# Make the script executable inside the container
+RUN chmod +x entrypoint.sh
+
 # Expose port 8080 for the API
-EXPOSE 8080
+# changing default Docker engine port: EXPOSE 8080
+EXPOSE 5000
 
 # Optional: Ensure the container runs as a non-root user (safer for production)
 # USER appuser
 
-# Start the API
-ENTRYPOINT ["dotnet", "TodoApi.dll"]
+# Start the API using the entrypoint script
+# Migrations are removed — entrypoint now only starts the API
+ENTRYPOINT ["./entrypoint.sh"]

@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-//Testing git
-
 function App() {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [estimatedMinutes, setEstimatedMinutes] = useState(25);
-  const API_URL = 'http://localhost:5299/api/todotasks'; // Update port if different
+  const API_URL = '/api/todotasks';
 
   // Fetch all tasks when component loads
   useEffect(() => {
@@ -19,6 +17,11 @@ function App() {
   const fetchTasks = async () => {
     try {
       const response = await fetch(API_URL);
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Error fetching tasks:', text);
+        return;
+      }
       const data = await response.json();
       setTasks(data);
     } catch (error) {
@@ -30,13 +33,7 @@ function App() {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const newTask = {
-      title,
-      description,
-      category,
-      estimatedMinutes,
-      isCompleted: false
-    };
+    const newTask = { title, description, category, estimatedMinutes, isCompleted: false };
 
     try {
       const response = await fetch(API_URL, {
@@ -44,6 +41,13 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTask)
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Error adding task:', text);
+        return;
+      }
+
       const data = await response.json();
       setTasks([...tasks, data]);
 
@@ -61,11 +65,18 @@ function App() {
     const updatedTask = { ...task, isCompleted: !task.isCompleted };
 
     try {
-      await fetch(`${API_URL}/${task.id}`, {
+      const response = await fetch(`${API_URL}/${task.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedTask)
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Error updating task:', text);
+        return;
+      }
+
       setTasks(tasks.map(t => t.id === task.id ? updatedTask : t));
     } catch (error) {
       console.error('Error updating task:', error);
@@ -74,7 +85,13 @@ function App() {
 
   const deleteTask = async (id) => {
     try {
-      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Error deleting task:', text);
+        return;
+      }
+
       setTasks(tasks.filter(t => t.id !== id));
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -183,58 +200,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Original boilerplate code commented out below
-
-// import { useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
-// import './App.css'
-
-// function App() {
-//   const [count, setCount] = useState(0)
-
-//   return (
-//     <>
-//       <div>
-//         <a href="https://vite.dev" target="_blank">
-//           <img src={viteLogo} className="logo" alt="Vite logo" />
-//         </a>
-//         <a href="https://react.dev" target="_blank">
-//           <img src={reactLogo} className="logo react" alt="React logo" />
-//         </a>
-//       </div>
-//       <h1>Vite + React</h1>
-//       <div className="card">
-//         <button onClick={() => setCount((count) => count + 1)}>
-//           count is {count}
-//         </button>
-//         <p>
-//           Edit <code>src/App.jsx</code> and save to test HMR
-//         </p>
-//       </div>
-//       <p className="read-the-docs">
-//         Click on the Vite and React logos to learn more
-//       </p>
-//     </>
-//   )
-// }
-
-// export default App
