@@ -1,3 +1,13 @@
+FROM node:22 AS frontend-build
+
+WORKDIR /app
+
+# Copy frontend source code
+COPY my-todo-app/ ./
+# Install dependencies and build
+RUN npm install
+RUN npm run build
+
 # --- Build Backend ---
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS backend-build
 
@@ -20,16 +30,15 @@ WORKDIR /app
 
 # Copy published backend
 COPY --from=backend-build /src/publish . 
-
 # Copy frontend build if using Vite
-COPY frontend-dist/ ./wwwroot/
+COPY --from=frontend-build /app/dist ./wwwroot/
 
 # Copy entrypoint if needed for other runtime commands
 COPY TodoApi/entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
 # Expose port
-EXPOSE 80
+EXPOSE 5000
 
 # Run the app
 ENTRYPOINT ["dotnet", "TodoApi.dll"]
