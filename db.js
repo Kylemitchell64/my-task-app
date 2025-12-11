@@ -1,11 +1,11 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  host: 'localhost',
+  host: 'postgres',  // matches Docker Compose service name
   port: 5432,
   database: 'postgres',
   user: 'postgres',
-  password: 'mysecretpass'
+  password: 'Killapilla200!'  // must match Compose env
 });
 
 module.exports = pool;

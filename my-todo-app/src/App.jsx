@@ -61,8 +61,13 @@ function App() {
     }
   };
 
+  // ✅ Updated toggleComplete to include createdDate
   const toggleComplete = async (task) => {
-    const updatedTask = { ...task, isCompleted: !task.isCompleted };
+    const updatedTask = { 
+      ...task, 
+      isCompleted: !task.isCompleted,
+      createdDate: task.createdDate // keep original createdDate for backend
+    };
 
     try {
       const response = await fetch(`${API_URL}/${task.id}`, {
