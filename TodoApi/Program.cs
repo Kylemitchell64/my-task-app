@@ -7,6 +7,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<TodoContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddHealthChecks()
+    .AddCheck<TodoApi.HealthChecks.DatabaseHealthCheck>(
+        "database",
+        tags: new[] { "ready" }
+    );
+
 // Configure CORS for React frontend
 builder.Services.AddCors(options =>
 {
@@ -28,29 +34,29 @@ var app = builder.Build();
 // Enable CORS
 app.UseCors("AllowReact");
 
-// Configure Swagger in Development
+// Swagger in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Serve SPA files
+// **Routing must come before static files for API**
+app.UseRouting();
+
+// Map controllers first
+app.MapControllers();
+
+// Serve SPA static files **after API routes**
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseRouting();
-
-// Map controllers and SPA fallback
-app.MapControllers();
-
-//app.MapFallbackToFile("index.html");
-// SPA fallback: serve index.html **only for non-API routes**
+// SPA fallback for non-API routes
 app.MapFallback(context =>
 {
     if (context.Request.Path.StartsWithSegments("/api"))
     {
-        context.Response.StatusCode = 404; // Let 404 happen if API route not found
+        context.Response.StatusCode = 404;
         return Task.CompletedTask;
     }
 
