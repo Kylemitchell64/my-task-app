@@ -1,7 +1,7 @@
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  box-sizing: border-box; /* keeps sizing predictable */
 }
 
 /* ---------- PAGE BACKGROUND ---------- */
@@ -10,8 +10,7 @@ body {
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
 
-  /* 🔁 Swapped: cyan background */
-  background-color: #09d6c5;
+  background-color: #1f1b24; /* dark background for the app */
 
   min-height: 100vh;
   display: flex;
@@ -27,21 +26,20 @@ body {
 
 /* ---------- HEADER / STATS BLOCK ---------- */
 header {
-  /* ✅ true light grey */
-  background: #eaeaea;
+  background: #2a2433;
   border-radius: 18px;
   padding: 36px;
   margin-bottom: 48px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
   text-align: center;
 }
 
 header h1 {
-  /* 🔁 Swapped: purple text */
-  color: #5c0354;
+  color: #a459a5; /* purple placeholder color */
   margin-bottom: 28px;
   font-size: 2.6em;
   font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* ---------- STATS GRID ---------- */
@@ -53,13 +51,20 @@ header h1 {
 }
 
 .stat {
-  /* 🔁 Swapped: purple boxes */
   background: #5c0354;
-  color: #f2f2f2;
+  color: #f2eaf4;
   padding: 22px;
   border-radius: 14px;
   text-align: center;
   width: 100%;
+  border: 2px solid rgba(92, 3, 84, 0.35);
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+}
+
+.stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(125, 41, 144, 0.45);
+  border-color: #7d2990;
 }
 
 .stat-value {
@@ -84,37 +89,59 @@ main {
 
 /* ---------- ADD TASK FORM ---------- */
 .add-task-form {
-  /* ✅ light grey */
-  background: #eaeaea;
+  background: #2a2433;
   padding: 32px;
   border-radius: 18px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
 .add-task-form h2 {
-  color: #5c0354;
+  color: #6f1a66;
   margin-bottom: 24px;
   font-size: 1.6em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+/* inputs and textareas */
 .add-task-form input,
 .add-task-form textarea {
   width: 100%;
   padding: 14px;
   margin-bottom: 18px;
-  border: 2px solid #cfcfcf;
+  border: 2px solid #3b3446;
   border-radius: 10px;
   font-size: 1em;
   font-family: inherit;
-  background: #f4f4f4;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  background: #3c3447;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s, transform 0.2s;
+  color: #d29ce0; /* user-entered text now brighter than placeholder */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  cursor: text;
 }
 
+/* placeholder text */
+.add-task-form input::placeholder,
+.add-task-form textarea::placeholder {
+  color: #a459a5; /* placeholder purple */
+  opacity: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* focus on input/textarea */
 .add-task-form input:focus,
 .add-task-form textarea:focus {
   outline: none;
-  border-color: #5c0354;
-  box-shadow: 0 0 0 3px rgba(92, 3, 84, 0.25);
+  border-color: #7d2990;
+  box-shadow: 0 0 0 3px rgba(125, 41, 144, 0.45);
+}
+
+/* hover effect for input fields */
+.add-task-form input:hover,
+.add-task-form textarea:hover {
+  border-color: #9c4ba0;
+  box-shadow: 0 4px 12px rgba(156, 75, 160, 0.45);
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #3c3447, #4a3854);
 }
 
 /* ---------- TIME INPUT ---------- */
@@ -128,12 +155,15 @@ main {
 .time-input label {
   flex: 1;
   font-size: 0.9em;
-  color: #555;
+  color: #a459a5; /* placeholder purple */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .time-input input {
   flex: 0 0 110px;
   margin: 0;
+  color: #d29ce0; /* user input slightly brighter than placeholder */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* ---------- BUTTON ---------- */
@@ -141,38 +171,38 @@ main {
   width: 100%;
   padding: 16px;
   background: #5c0354;
-  color: #f2f2f2;
+  color: #f2eaf4;
   border: none;
   border-radius: 10px;
   font-size: 1.1em;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
 .add-task-form button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(92, 3, 84, 0.4);
+  box-shadow: 0 8px 22px rgba(92, 3, 84, 0.65);
+  background: #6a0d70;
 }
 
 /* ---------- TASK LIST ---------- */
 .tasks-container {
-  /* ✅ light grey */
-  background: #eaeaea;
+  background: #2a2433;
   padding: 32px;
   border-radius: 18px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
 .tasks-container h2 {
-  color: #5c0354;
+  color: #6f1a66;
   margin-bottom: 28px;
   font-size: 1.6em;
 }
 
 .empty-state {
   text-align: center;
-  color: #666;
+  color: #8f889c;
   padding: 48px;
   font-size: 1.1em;
 }
@@ -187,20 +217,21 @@ main {
   justify-content: space-between;
   padding: 22px;
   margin-bottom: 18px;
-  border: 2px solid #cfcfcf;
+  border: 2px solid rgba(92, 3, 84, 0.35);
   border-radius: 14px;
-  background: #f4f4f4;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  background: #3c3447;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
 }
 
 .task-item:hover {
-  border-color: #5c0354;
-  box-shadow: 0 8px 20px rgba(92, 3, 84, 0.25);
+  border-color: #7d2990;
+  box-shadow: 0 10px 24px rgba(125, 41, 144, 0.45);
 }
 
 .task-item.completed {
-  opacity: 0.6;
-  background: #dedede;
+  opacity: 0.55;
+  background: #201b25;
+  border-color: #3b3446;
 }
 
 .task-main {
@@ -217,9 +248,10 @@ main {
 }
 
 .task-content h3 {
-  color: #222;
+  color: #d29ce0; /* brighter user text for filled tasks */
   margin-bottom: 8px;
   font-size: 1.15em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 
 .task-item.completed h3 {
@@ -227,9 +259,9 @@ main {
 }
 
 .task-content p {
-  color: #555;
+  color: #b8b2c2;
   margin-bottom: 10px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .task-meta {
@@ -240,14 +272,15 @@ main {
 
 .category {
   background: #5c0354;
-  color: #f2f2f2;
+  color: #f2eaf4;
   padding: 4px 12px;
   border-radius: 14px;
   font-weight: 600;
 }
 
 .time {
-  color: #666;
+  color: #d29ce0; /* brighter for user-entered time */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 
 /* ---------- DELETE ---------- */
@@ -256,13 +289,15 @@ main {
   border: none;
   font-size: 1.4em;
   cursor: pointer;
-  opacity: 0.5;
-  transition: opacity 0.2s, transform 0.2s;
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.2s, color 0.2s;
+  color: #e6e1eb;
 }
 
 .delete-btn:hover {
   opacity: 1;
   transform: scale(1.15);
+  color: #f2eaf4;
 }
 
 /* ---------- MOBILE ---------- */
