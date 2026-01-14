@@ -12,12 +12,12 @@ namespace TodoApi.Controllers
         public TodoTasksController(TodoContext context) { _context = context; }
         // GET: api/TodoTasks - Get all tasks
         [HttpGet]
+        [Produces("application/json")]
         public async Task<ActionResult<IEnumerable<TodoTask>>> GetTodoTasks()
         {
             return await _context.TodoTasks.ToListAsync();
         }
         // POST: api/TodoTasks - Create new task
-        [HttpPost]
         //need to add UTC dateTime
         // public async Task<ActionResult<TodoTask>> PostTodoTask(TodoTask task)
         // {
@@ -25,6 +25,9 @@ namespace TodoApi.Controllers
         //     await _context.SaveChangesAsync();
         //     return CreatedAtAction(nameof(GetTodoTask), new { id = task.Id }, task);
         // }
+
+        //Ol' Reliable
+        /**
         [HttpPost]
         public async Task<ActionResult<TodoTask>> PostTodoTask(TodoTask task)
         {
@@ -36,6 +39,19 @@ namespace TodoApi.Controllers
 
             return CreatedAtAction(nameof(GetTodoTask), new { id = task.Id }, task);
         }
+        **/
+        //Testing [FromBody] attribute
+        [HttpPost]
+        public async Task<ActionResult<TodoTask>> PostTodoTask([FromBody] TodoTask task)
+        {
+            task.CreatedDate = DateTime.UtcNow;
+
+            _context.TodoTasks.Add(task);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetTodoTask), new { id = task.Id }, task);
+        }
+
 
 
         // PUT: api/TodoTasks/5 - Update task
@@ -77,6 +93,7 @@ namespace TodoApi.Controllers
         }
         // GET: api/TodoTasks/5 - Get one task
         [HttpGet("{id}")]
+        [Produces("application/json")]
         public async Task<ActionResult<TodoTask>> GetTodoTask(int id)
         {
             var task = await _context.TodoTasks.FindAsync(id);

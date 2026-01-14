@@ -25,7 +25,26 @@ builder.Services.AddCors(options =>
 });
 
 // Add controllers and Swagger/OpenAPI
-builder.Services.AddControllers();
+//builder.Services.AddControllers();
+builder.Services
+    .AddControllers(options =>
+    {
+        options.ReturnHttpNotAcceptable = true;
+    })
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy =
+            System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
+    //Was causing backend to send PascalCase JSON
+    //  not camelCase, which the React frontend expects
+    /**
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+    });
+    **/
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -40,6 +59,27 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+//middleware to set security headers
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        return Task.CompletedTask;
+    });
+
+    await next();   //prevents blocking the request pipeline
+});
+
+/** duplicate headers & intefered with response constructiuon
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    await next();
+});
+**/
+
 
 // **Routing must come before static files for API**
 app.UseRouting();
