@@ -12,7 +12,7 @@ namespace TodoApi.Controllers
         public TodoTasksController(TodoContext context) { _context = context; }
         // GET: api/TodoTasks - Get all tasks
         [HttpGet]
-        [Produces("application/json")]
+        [Produces("application/json")] //this IS the accept Header
         public async Task<ActionResult<IEnumerable<TodoTask>>> GetTodoTasks()
         {
             return await _context.TodoTasks.ToListAsync();
@@ -91,6 +91,23 @@ namespace TodoApi.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+#if DEBUG
+        // DELETE: api/TodoTasks/deleteAll - Test-only
+        [HttpDelete("deleteAll")]
+        public async Task<IActionResult> DeleteAllTodoTasks()
+        {
+            var allTasks = _context.TodoTasks.ToList();
+            if (!allTasks.Any()) return NoContent();
+
+            _context.TodoTasks.RemoveRange(allTasks);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+#endif
+
+
+
+
         // GET: api/TodoTasks/5 - Get one task
         [HttpGet("{id}")]
         [Produces("application/json")]

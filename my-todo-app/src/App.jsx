@@ -8,6 +8,8 @@ function App() {
   const [category, setCategory] = useState('');
   const [estimatedMinutes, setEstimatedMinutes] = useState(25);
   const API_URL = '/api/todotasks';
+  //const API_URL = import.meta.env.VITE_API_URL;
+
 
   // Fetch all tasks when component loads
   useEffect(() => {
