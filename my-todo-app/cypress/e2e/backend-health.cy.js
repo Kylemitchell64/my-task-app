@@ -1,6 +1,6 @@
 describe("Backend health", () => {
   it("API health endpoint returns 200", () => {
-    cy.request("http://localhost:80/api/diagnostic/health")
+    cy.request("/api/diagnostic/health")
       .its("status")
       .should("eq", 200);
   });

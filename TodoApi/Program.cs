@@ -3,9 +3,22 @@ using TodoApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ======================================================
+// SELECT CONNECTION STRING BASED ON ENVIRONMENT
+// - DefaultConnection → normal dev / prod DB
+// - TestConnection    → isolated Cypress TEST DB
+// Triggered by: ASPNETCORE_ENVIRONMENT=Test
+// ======================================================
+var connectionString = builder.Configuration.GetConnectionString(
+    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Test"
+        ? "TestConnection"
+        : "DefaultConnection"
+);
+
 // Configure PostgreSQL using connection string from appsettings.json
 builder.Services.AddDbContext<TodoContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString)
+);
 
 builder.Services.AddHealthChecks()
     .AddCheck<TodoApi.HealthChecks.DatabaseHealthCheck>(
@@ -80,12 +93,14 @@ app.Use(async (context, next) =>
 });
 **/
 
-
 // **Routing must come before static files for API**
 app.UseRouting();
 
 // Map controllers first
 app.MapControllers();
+
+// Health check endpoint for Cypress e2e tests
+app.MapHealthChecks("/api/diagnostic/health");
 
 // Serve SPA static files **after API routes**
 app.UseDefaultFiles();

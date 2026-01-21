@@ -1,0 +1,26 @@
+services:
+  postgres-test:
+    image: postgres:15
+    container_name: my-postgres-test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Killapilla200!
+      POSTGRES_DB: testdb
+    ports:
+      - "5433:5432"   # HOST → CONTAINER
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+
+  web-test:
+    build: .
+    container_name: my-fullstack-app-test
+    depends_on:
+      - postgres-test
+    ports:
+      - "5001:5000"   # HOST → CONTAINER
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      ASPNETCORE_URLS: "http://+:5000"
+
+volumes:
+  postgres-test-data:

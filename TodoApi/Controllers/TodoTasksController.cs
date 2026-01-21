@@ -78,11 +78,24 @@ namespace TodoApi.Controllers
 
 
 
+        // DELETE ALL — put this before DeleteTodoTask
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [HttpDelete("deleteAll")]
+        public async Task<IActionResult> DeleteAllTodoTasks([FromServices] IWebHostEnvironment env)
+        {
+            if (!env.IsEnvironment("Test"))
+                return NotFound();
 
+            var allTasks = await _context.TodoTasks.ToListAsync();
+            if (!allTasks.Any()) return NoContent();
 
+            _context.TodoTasks.RemoveRange(allTasks);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
 
-        // DELETE: api/TodoTasks/5 - Delete task
-        [HttpDelete("{id}")]
+        // DELETE SINGLE — keep after DeleteAll
+        [HttpDelete("{id:int}")] // <-- restrict to int
         public async Task<IActionResult> DeleteTodoTask(int id)
         {
             var task = await _context.TodoTasks.FindAsync(id);
@@ -91,19 +104,6 @@ namespace TodoApi.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
-#if DEBUG
-        // DELETE: api/TodoTasks/deleteAll - Test-only
-        [HttpDelete("deleteAll")]
-        public async Task<IActionResult> DeleteAllTodoTasks()
-        {
-            var allTasks = _context.TodoTasks.ToList();
-            if (!allTasks.Any()) return NoContent();
-
-            _context.TodoTasks.RemoveRange(allTasks);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-#endif
 
 
 

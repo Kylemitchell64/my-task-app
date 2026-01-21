@@ -6,4 +6,3 @@ describe("MY-TASK-APP smoke test", () => {
     cy.contains(/task/i);             // Checks for text containing 'task'
   });
 });
-
