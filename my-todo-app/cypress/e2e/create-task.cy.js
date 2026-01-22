@@ -23,9 +23,7 @@ describe("Create task (E2E – TEST DB)", () => {
     cy.visit(APP_URL);
 
     cy.get("input").first().type(taskText);
-    cy.get("button")
-      .contains(/add|create|submit/i)
-      .click();
+    cy.get('[data-testid="create-button"]').click(); // updated selector
 
     cy.contains(taskText).should("be.visible");
   });
