@@ -7,8 +7,10 @@ function App() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [estimatedMinutes, setEstimatedMinutes] = useState(25);
+  const [error, setError] = useState(null);
+
   const API_URL = "/api/todotasks";
-  //const API_URL = import.meta.env.VITE_API_URL;
+  // const API_URL = import.meta.env.VITE_API_URL;
 
   // Fetch all tasks when component loads
   useEffect(() => {
@@ -19,14 +21,14 @@ function App() {
     try {
       const response = await fetch(API_URL);
       if (!response.ok) {
-        const text = await response.text();
-        console.error("Error fetching tasks:", text);
+        setError("Failed to load tasks");
         return;
       }
       const data = await response.json();
       setTasks(data);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
+      setError(null);
+    } catch {
+      setError("Failed to load tasks");
     }
   };
 
@@ -50,30 +52,28 @@ function App() {
       });
 
       if (!response.ok) {
-        const text = await response.text();
-        console.error("Error adding task:", text);
+        setError("Failed to add task");
         return;
       }
 
       const data = await response.json();
       setTasks([...tasks, data]);
+      setError(null);
 
-      // Clear form
       setTitle("");
       setDescription("");
       setCategory("");
       setEstimatedMinutes(25);
-    } catch (error) {
-      console.error("Error adding task:", error);
+    } catch {
+      setError("Failed to add task");
     }
   };
 
-  // ✅ Updated toggleComplete to include createdDate
   const toggleComplete = async (task) => {
     const updatedTask = {
       ...task,
       isCompleted: !task.isCompleted,
-      createdDate: task.createdDate, // keep original createdDate for backend
+      createdDate: task.createdDate,
     };
 
     try {
@@ -84,14 +84,14 @@ function App() {
       });
 
       if (!response.ok) {
-        const text = await response.text();
-        console.error("Error updating task:", text);
+        setError("Failed to update task");
         return;
       }
 
       setTasks(tasks.map((t) => (t.id === task.id ? updatedTask : t)));
-    } catch (error) {
-      console.error("Error updating task:", error);
+      setError(null);
+    } catch {
+      setError("Failed to update task");
     }
   };
 
@@ -99,14 +99,14 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
       if (!response.ok) {
-        const text = await response.text();
-        console.error("Error deleting task:", text);
+        setError("Failed to delete task");
         return;
       }
 
       setTasks(tasks.filter((t) => t.id !== id));
-    } catch (error) {
-      console.error("Error deleting task:", error);
+      setError(null);
+    } catch {
+      setError("Failed to delete task");
     }
   };
 
@@ -141,6 +141,12 @@ function App() {
       </header>
 
       <main>
+        {error && (
+          <div data-testid="error-message" className="error">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={addTask} className="add-task-form">
           <h2>Add New Task</h2>
           <input
@@ -149,6 +155,7 @@ function App() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            data-testid="new-task-title"
           />
           <textarea
             placeholder="Description"
@@ -167,7 +174,9 @@ function App() {
             <input
               type="number"
               value={estimatedMinutes}
-              onChange={(e) => setEstimatedMinutes(Number(e.target.value))}
+              onChange={(e) =>
+                setEstimatedMinutes(Number(e.target.value))
+              }
               min="1"
             />
           </div>
@@ -179,7 +188,7 @@ function App() {
         <div className="tasks-container">
           <h2>Your Tasks ({tasks.length})</h2>
           {tasks.length === 0 ? (
-            <p className="empty-state">
+            <p className="empty-state" data-testid="empty-state">
               No tasks yet. Add your first learning goal above! 🚀
             </p>
           ) : (
@@ -187,16 +196,20 @@ function App() {
               {tasks.map((task) => (
                 <li
                   key={task.id}
-                  className={`task-item ${task.isCompleted ? "completed" : ""}`}
+                  className={`task-item ${
+                    task.isCompleted ? "completed" : ""
+                  }`}
+                  data-testid="task-item"
                 >
                   <div className="task-main">
                     <input
                       type="checkbox"
                       checked={task.isCompleted}
                       onChange={() => toggleComplete(task)}
+                      data-testid="task-complete-checkbox"
                     />
                     <div className="task-content">
-                      <h3>{task.title}</h3>
+                      <h3 data-testid="task-title">{task.title}</h3>
                       {task.description && <p>{task.description}</p>}
                       <div className="task-meta">
                         {task.category && (
@@ -210,6 +223,7 @@ function App() {
                   </div>
                   <button
                     className="delete-btn"
+                    data-testid="delete-button"
                     onClick={() => deleteTask(task.id)}
                   >
                     🗑️

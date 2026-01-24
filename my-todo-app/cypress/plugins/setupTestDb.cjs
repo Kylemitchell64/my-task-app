@@ -36,9 +36,15 @@ module.exports = () => {
   }
 };
 
+// Call the function immediately for manual migration
+module.exports();
 
 /**
  * to manually migrate:
- * only after you temporarily switch the connection string to localhost:
- * node cypress/plugins/setupTestDb.js
+ * only after you temporarily switch the test connection string to localhost:
+ * cd my-todo-app
+ * 
+ * node cypress/plugins/setupTestDb.cjs
+ * 
+ * change connection string back to what it was
  */

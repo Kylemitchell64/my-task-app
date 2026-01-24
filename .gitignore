@@ -1,3 +1,6 @@
+# Vite
+my-todo-app/dist
+
 # Build output
 bin/
 obj/
