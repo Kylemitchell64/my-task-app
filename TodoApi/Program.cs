@@ -29,11 +29,15 @@ builder.Services.AddHealthChecks()
 // Configure CORS for React frontend
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReact", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // React dev server
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.WithOrigins(
+            "http://localhost:5173", //React dev server
+            "http://localhost:3000", 
+            "http://localhost"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 
@@ -102,6 +106,9 @@ app.MapControllers();
 // Health check endpoint for Cypress e2e tests
 app.MapHealthChecks("/api/diagnostic/health");
 
+//REMOVED STATIC FILE MIDDLEWARE
+//REMOVING SPA FALLBACK AS NGINX WILL HANDLE IT
+/**
 // Serve SPA static files **after API routes**
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -118,5 +125,6 @@ app.MapFallback(context =>
     context.Response.ContentType = "text/html";
     return context.Response.SendFileAsync("wwwroot/index.html");
 });
+**/
 
 app.Run();
