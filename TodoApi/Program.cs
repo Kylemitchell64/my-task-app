@@ -127,4 +127,13 @@ app.MapFallback(context =>
 });
 **/
 
+
+//Automigrate DB on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<TodoContext>();
+    db.Database.Migrate();
+}
+
+
 app.Run();

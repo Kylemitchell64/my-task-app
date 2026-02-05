@@ -1,5 +1,5 @@
 services:
-  postgres-test:
+  postgres:
     image: postgres:15
     container_name: my-postgres-test
     environment:
@@ -7,20 +7,37 @@ services:
       POSTGRES_PASSWORD: Killapilla200!
       POSTGRES_DB: testdb
     ports:
-      - "5433:5432"   # HOST → CONTAINER
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres-test-data:/var/lib/postgresql/data
 
-  web-test:
-    build: .
-    container_name: my-fullstack-app-test
+  api:
+    build:
+      context: ./TodoApi
+      dockerfile: Dockerfile
+    container_name: my-api-test
+    restart: on-failure
     depends_on:
-      - postgres-test
-    ports:
-      - "5001:5000"   # HOST → CONTAINER
+      postgres:
+        condition: service_healthy
     environment:
-      ASPNETCORE_ENVIRONMENT: Test
-      ASPNETCORE_URLS: "http://+:5000"
+      - ASPNETCORE_ENVIRONMENT=Test
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=testdb;Username=postgres;Password=Killapilla200!
+
+  frontend:
+    build:
+      context: ./my-todo-app
+      dockerfile: Dockerfile
+    container_name: my-frontend-test
+    ports:
+      - "5001:80"
+    depends_on:
+      - api
 
 volumes:
   postgres-test-data:
