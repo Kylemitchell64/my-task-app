@@ -58,3 +58,6 @@ docker-compose.override.yml   # Local override file (if you use Docker Compose)
 *.tmp
 *.bak
 *.swp
+
+# Kubernetes secrets
+k8s/base/secrets.yaml
