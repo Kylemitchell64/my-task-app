@@ -9,7 +9,8 @@ function App() {
   const [estimatedMinutes, setEstimatedMinutes] = useState(25);
   const [error, setError] = useState(null);
 
-  const API_URL = "/api/todotasks";
+  const API_URL = "https://my-task-app-bt7p.onrender.com/api/todotasks";
+  //const API_URL = "/api/todotasks";
   // const API_URL = import.meta.env.VITE_API_URL;
 
   // Fetch all tasks when component loads

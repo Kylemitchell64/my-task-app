@@ -61,3 +61,4 @@ docker-compose.override.yml   # Local override file (if you use Docker Compose)
 
 # Kubernetes secrets
 k8s/base/secrets.yaml
+.claude/

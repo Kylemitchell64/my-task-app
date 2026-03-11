@@ -32,9 +32,11 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "http://localhost:5173", //React dev server
-            "http://localhost:3000", 
-            "http://localhost"
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://localhost",
+            "https://portfolio-lemon-mu-85.vercel.app",
+            "https://www.kylehmitchell.com"
         )
         .AllowAnyHeader()
         .AllowAnyMethod();
@@ -53,14 +55,14 @@ builder.Services
         options.JsonSerializerOptions.PropertyNamingPolicy =
             System.Text.Json.JsonNamingPolicy.CamelCase;
     });
-    //Was causing backend to send PascalCase JSON
-    //  not camelCase, which the React frontend expects
-    /**
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null;
-    });
-    **/
+//Was causing backend to send PascalCase JSON
+//  not camelCase, which the React frontend expects
+/**
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+});
+**/
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -68,7 +70,8 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Enable CORS
-app.UseCors("AllowReact");
+//app.UseCors("AllowReact");
+app.UseCors("AllowFrontend");
 
 // Swagger in development
 if (app.Environment.IsDevelopment())
