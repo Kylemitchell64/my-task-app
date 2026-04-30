@@ -10,12 +10,7 @@ using TodoApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ======================================================
-// SELECT CONNECTION STRING BASED ON ENVIRONMENT
-// - DefaultConnection → normal dev / prod DB
-// - TestConnection    → isolated Cypress TEST DB
-// Triggered by: ASPNETCORE_ENVIRONMENT=Test
-// ======================================================
+// Use TestConnection when running Cypress tests, DefaultConnection otherwise
 var connectionString = builder.Configuration.GetConnectionString(
     Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Test"
         ? "TestConnection"

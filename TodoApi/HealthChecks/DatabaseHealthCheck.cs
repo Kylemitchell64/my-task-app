@@ -21,13 +21,11 @@ public class DatabaseHealthCheck : IHealthCheck
     {
         try
         {
-            // Use a short timeout to fail fast
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken, 
+                cancellationToken,
                 timeoutCts.Token);
 
-            // Actually execute a query against the database
             await _context.Database.ExecuteSqlRawAsync(
                 "SELECT 1", 
                 linkedCts.Token);
