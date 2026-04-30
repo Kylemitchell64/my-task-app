@@ -300,6 +300,115 @@ main {
   color: #f2eaf4;
 }
 
+/* ---------- USER BAR ---------- */
+.user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-email {
+  color: #d29ce0;
+  font-size: 0.9em;
+}
+
+.logout-btn {
+  background: none;
+  border: 1px solid #5c0354;
+  color: #a459a5;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.logout-btn:hover {
+  background: #5c0354;
+  color: #f2eaf4;
+}
+
+/* ---------- LOGIN PAGE ---------- */
+.login-container {
+  max-width: 420px;
+  margin: 120px auto 0;
+  background: #2a2433;
+  border-radius: 18px;
+  padding: 48px 40px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+.login-container h1 {
+  color: #a459a5;
+  font-size: 2em;
+  margin-bottom: 12px;
+}
+
+.login-subtitle {
+  color: #8f889c;
+  margin-bottom: 36px;
+  font-size: 1em;
+}
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 1em;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+}
+
+.login-btn__icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.login-btn--google {
+  background: #fff;
+  color: #3c4043;
+}
+
+.login-btn--github {
+  background: #24292e;
+  color: #fff;
+}
+
+/* ---------- XSS CONTENT OVERFLOW PROTECTION ---------- */
+.task-item,
+.task-content h3,
+.task-content p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+
 /* ---------- MOBILE ---------- */
 @media (max-width: 900px) {
   main {

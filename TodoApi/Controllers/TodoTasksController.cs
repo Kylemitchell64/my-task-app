@@ -1,69 +1,88 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Data;
 using TodoApi.Models;
+
 namespace TodoApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
+    [EnableRateLimiting("fixed")]
     public class TodoTasksController : ControllerBase
     {
         private readonly TodoContext _context;
-        public TodoTasksController(TodoContext context) { _context = context; }
-        // GET: api/TodoTasks - Get all tasks
+        private readonly ILogger<TodoTasksController> _logger;
+
+        public TodoTasksController(TodoContext context, ILogger<TodoTasksController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        private string? GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        // GET: api/TodoTasks
         [HttpGet]
-        [Produces("application/json")] //this IS the accept Header
+        [Produces("application/json")]
         public async Task<ActionResult<IEnumerable<TodoTask>>> GetTodoTasks()
         {
-            return await _context.TodoTasks.ToListAsync();
-        }
-        // POST: api/TodoTasks - Create new task
-        //need to add UTC dateTime
-        // public async Task<ActionResult<TodoTask>> PostTodoTask(TodoTask task)
-        // {
-        //     _context.TodoTasks.Add(task);
-        //     await _context.SaveChangesAsync();
-        //     return CreatedAtAction(nameof(GetTodoTask), new { id = task.Id }, task);
-        // }
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
 
-        //Ol' Reliable
-        /**
-        [HttpPost]
-        public async Task<ActionResult<TodoTask>> PostTodoTask(TodoTask task)
+            return await _context.TodoTasks
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
+        }
+
+        // GET: api/TodoTasks/5
+        [HttpGet("{id}")]
+        [Produces("application/json")]
+        public async Task<ActionResult<TodoTask>> GetTodoTask(int id)
         {
-            // Ensure CreatedDate is stored as UTC
-            task.CreatedDate = DateTime.UtcNow;
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
 
-            _context.TodoTasks.Add(task);
-            await _context.SaveChangesAsync();
+            var task = await _context.TodoTasks.FindAsync(id);
+            if (task == null || task.UserId != userId) return NotFound();
 
-            return CreatedAtAction(nameof(GetTodoTask), new { id = task.Id }, task);
+            return task;
         }
-        **/
-        //Testing [FromBody] attribute
+
+        // POST: api/TodoTasks
         [HttpPost]
         public async Task<ActionResult<TodoTask>> PostTodoTask([FromBody] TodoTask task)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
+
             task.CreatedDate = DateTime.UtcNow;
+            task.UserId = userId;
 
             _context.TodoTasks.Add(task);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("User {UserId} created task {TaskId}", userId, task.Id);
             return CreatedAtAction(nameof(GetTodoTask), new { id = task.Id }, task);
         }
 
-
-
-        // PUT: api/TodoTasks/5 - Update task
+        // PUT: api/TodoTasks/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTodoTask(int id, [FromBody] TodoTask updatedTask)
         {
-            if (id != updatedTask.Id)
-                return BadRequest("ID mismatch");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (id != updatedTask.Id) return BadRequest("ID mismatch");
+
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
 
             var existingTask = await _context.TodoTasks.FindAsync(id);
-            if (existingTask == null)
-                return NotFound();
+            if (existingTask == null || existingTask.UserId != userId) return NotFound();
 
             existingTask.Title = updatedTask.Title;
             existingTask.Description = updatedTask.Description;
@@ -72,15 +91,13 @@ namespace TodoApi.Controllers
             existingTask.EstimatedMinutes = updatedTask.EstimatedMinutes;
 
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 
-
-
-        // DELETE ALL — put this before DeleteTodoTask
+        // DELETE ALL — test environment only
         [ApiExplorerSettings(IgnoreApi = true)]
         [HttpDelete("deleteAll")]
+        [AllowAnonymous]
         public async Task<IActionResult> DeleteAllTodoTasks([FromServices] IWebHostEnvironment env)
         {
             if (!env.IsEnvironment("Test"))
@@ -94,28 +111,21 @@ namespace TodoApi.Controllers
             return NoContent();
         }
 
-        // DELETE SINGLE — keep after DeleteAll
-        [HttpDelete("{id:int}")] // <-- restrict to int
+        // DELETE: api/TodoTasks/5
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteTodoTask(int id)
         {
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
+
             var task = await _context.TodoTasks.FindAsync(id);
-            if (task == null) return NotFound();
+            if (task == null || task.UserId != userId) return NotFound();
+
             _context.TodoTasks.Remove(task);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("User {UserId} deleted task {TaskId}", userId, id);
             return NoContent();
-        }
-
-
-
-
-        // GET: api/TodoTasks/5 - Get one task
-        [HttpGet("{id}")]
-        [Produces("application/json")]
-        public async Task<ActionResult<TodoTask>> GetTodoTask(int id)
-        {
-            var task = await _context.TodoTasks.FindAsync(id);
-            if (task == null) return NotFound();
-            return task;
         }
     }
 }

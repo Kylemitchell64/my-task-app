@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
+import { useAuth } from "./auth/AuthContext";
+
+const API_BASE =
+  import.meta.env.VITE_API_URL || "https://my-task-app-bt7p.onrender.com";
+const API_URL = `${API_BASE}/api/todotasks`;
 
 function App() {
+  const { token, user, logout } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -9,18 +15,22 @@ function App() {
   const [estimatedMinutes, setEstimatedMinutes] = useState(25);
   const [error, setError] = useState(null);
 
-  const API_URL = "https://my-task-app-bt7p.onrender.com/api/todotasks";
-  //const API_URL = "/api/todotasks";
-  // const API_URL = import.meta.env.VITE_API_URL;
+  const fetchWithAuth = useCallback(
+    (url, options = {}) =>
+      fetch(url, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          ...options.headers,
+        },
+      }),
+    [token]
+  );
 
-  // Fetch all tasks when component loads
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
-      const response = await fetch(API_URL);
+      const response = await fetchWithAuth(API_URL);
       if (!response.ok) {
         setError("Failed to load tasks");
         return;
@@ -31,7 +41,11 @@ function App() {
     } catch {
       setError("Failed to load tasks");
     }
-  };
+  }, [fetchWithAuth]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const addTask = async (e) => {
     e.preventDefault();
@@ -46,9 +60,8 @@ function App() {
     };
 
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetchWithAuth(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTask),
       });
 
@@ -60,7 +73,6 @@ function App() {
       const data = await response.json();
       setTasks([...tasks, data]);
       setError(null);
-
       setTitle("");
       setDescription("");
       setCategory("");
@@ -71,16 +83,11 @@ function App() {
   };
 
   const toggleComplete = async (task) => {
-    const updatedTask = {
-      ...task,
-      isCompleted: !task.isCompleted,
-      createdDate: task.createdDate,
-    };
+    const updatedTask = { ...task, isCompleted: !task.isCompleted };
 
     try {
-      const response = await fetch(`${API_URL}/${task.id}`, {
+      const response = await fetchWithAuth(`${API_URL}/${task.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedTask),
       });
 
@@ -98,12 +105,13 @@ function App() {
 
   const deleteTask = async (id) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      const response = await fetchWithAuth(`${API_URL}/${id}`, {
+        method: "DELETE",
+      });
       if (!response.ok) {
         setError("Failed to delete task");
         return;
       }
-
       setTasks(tasks.filter((t) => t.id !== id));
       setError(null);
     } catch {
@@ -121,6 +129,21 @@ function App() {
     <div className="App">
       <header>
         <h1>🎯 My Learning Tracker</h1>
+
+        <div className="user-bar">
+          {user?.avatarUrl && (
+            <img
+              src={user.avatarUrl}
+              alt="avatar"
+              className="user-avatar"
+            />
+          )}
+          <span className="user-email">{user?.email}</span>
+          <button className="logout-btn" onClick={logout}>
+            Sign out
+          </button>
+        </div>
+
         <div className="stats">
           <div className="stat">
             <span className="stat-value">{tasks.length}</span>
@@ -156,6 +179,7 @@ function App() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            maxLength={200}
             data-testid="new-task-title"
           />
           <textarea
@@ -163,22 +187,23 @@ function App() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows="3"
+            maxLength={2000}
           />
           <input
             type="text"
             placeholder="Category (e.g., React, C#, Database)"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
+            maxLength={100}
           />
           <div className="time-input">
             <label>Estimated time (minutes):</label>
             <input
               type="number"
               value={estimatedMinutes}
-              onChange={(e) =>
-                setEstimatedMinutes(Number(e.target.value))
-              }
+              onChange={(e) => setEstimatedMinutes(Number(e.target.value))}
               min="1"
+              max="1440"
             />
           </div>
           <button type="submit" data-testid="create-button">
@@ -197,9 +222,7 @@ function App() {
               {tasks.map((task) => (
                 <li
                   key={task.id}
-                  className={`task-item ${
-                    task.isCompleted ? "completed" : ""
-                  }`}
+                  className={`task-item ${task.isCompleted ? "completed" : ""}`}
                   data-testid="task-item"
                 >
                   <div className="task-main">
