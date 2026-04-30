@@ -1,14 +1,14 @@
-# Vite
+# Frontend
 my-todo-app/dist
+node_modules/
+dist/
 
 # Build output
 bin/
 obj/
 
-# VS Code settings
+# Editor
 .vscode/
-
-# Visual Studio
 .vs/
 *.user
 *.rsuser
@@ -16,7 +16,7 @@ obj/
 *.userosscache
 *.sln.docstates
 
-# .NET build artifacts
+# .NET artifacts
 *.dll
 *.exe
 *.pdb
@@ -35,30 +35,22 @@ artifacts/
 *.dgspec.json
 *.nuget.cache
 
-# Node / Frontend
-node_modules/
-dist/                  # Frontend build output (e.g., Angular/React/Vue)
-
-# Environment files
+# Environment
 .env
-appsettings.Development.json   # Local development settings
+appsettings.Development.json
 
 # Test results
 TestResults/
 *.coverage
 *.coveragexml
 
-# Generated files
-Generated_Code/
-
 # Docker
-docker-compose.override.yml   # Local override file (if you use Docker Compose)
+docker-compose.override.yml
 
-# Miscellaneous
+# Misc
 *.tmp
 *.bak
 *.swp
 
-# Kubernetes secrets
+# Kubernetes
 k8s/base/secrets.yaml
-.claude/
