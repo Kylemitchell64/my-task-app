@@ -22,7 +22,6 @@ namespace TodoApi.Models
         [Range(1, 1440)]
         public int EstimatedMinutes { get; set; } = 25;
 
-        [Required]
         public string UserId { get; set; } = string.Empty;
     }
 }
