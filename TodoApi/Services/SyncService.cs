@@ -104,7 +104,9 @@ public class SyncService
         if (incoming is not { Count: > 0 }) return (accepted, stale);
 
         // If a device sends the same task twice, keep its newest copy.
+        // Entries with no usable id are dropped.
         var latest = incoming
+            .Where(t => t is not null && t.Id != Guid.Empty)
             .GroupBy(t => t.Id)
             .Select(g => g.MaxBy(t => t.UpdatedAt)!)
             .ToList();
@@ -161,7 +163,7 @@ public class SyncService
         var accepted = new HashSet<Guid>();
         if (incoming is not { Count: > 0 }) return accepted;
 
-        var latest = incoming.DistinctBy(s => s.Id).ToList();
+        var latest = incoming.Where(s => s is not null && s.Id != Guid.Empty).DistinctBy(s => s.Id).ToList();
         var ids = latest.Select(s => s.Id).ToList();
         var known = await _db.FocusSessions
             .Where(s => s.UserId == userId && ids.Contains(s.ClientId))

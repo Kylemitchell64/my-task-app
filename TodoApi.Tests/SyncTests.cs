@@ -262,6 +262,21 @@ public class SyncTests : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task Entries_that_are_null_or_have_no_id_are_ignored()
+    {
+        var (client, _) = await _factory.SignInAsync();
+        var response = await client.PostAsync("/api/sync", new StringContent(
+            """{ "cursor": 0, "tasks": [ null, { "title": "no id" }, { "id": "00000000-0000-0000-0000-000000000000", "title": "empty id" } ], "sessions": [ null, { "seconds": 60 } ] }""",
+            System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var pulled = await SyncAsync(client, 0);
+        Assert.Empty(pulled.Tasks);
+        Assert.Empty(pulled.Sessions);
+        Assert.Equal(0, pulled.Cursor);
+    }
+
+    [Fact]
     public async Task Malformed_json_is_a_bad_request()
     {
         var (client, _) = await _factory.SignInAsync();

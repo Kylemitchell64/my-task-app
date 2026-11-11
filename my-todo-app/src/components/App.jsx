@@ -200,8 +200,10 @@ export default function App() {
       // Work in sessions of the preferred length, or less if the task needs less.
       minutes = left >= 5 ? Math.min(left, sessionLength) : sessionLength;
     }
-    setFocusResult(null);
+    // Starting a session wraps up any session already running, which reports a result.
+    // Clear it afterwards so only the new countdown shows.
     timer.start(task?.id ?? null, minutes);
+    setFocusResult(null);
   }, []);
 
   // ---------- Task actions ----------
