@@ -14,6 +14,7 @@ React 19 frontend, ASP.NET Core 8 API, PostgreSQL. Free to run.
 
 - **Type one line, get a full task.** `Read EF Core docs 45m #csharp tomorrow !high` becomes a 45-minute, high-priority task in the *csharp* category, due tomorrow. Each piece it understood shows as a chip you can dismiss if it guessed wrong.
 - **Focus timer built in.** Press play on a task to start a countdown. Time is logged against the task, so you can see estimate versus actual.
+- **Focus mode.** One click hides everything except the countdown and the task in front of you.
 - **Progress you can see.** A streak, time focused today, and a seven-day chart with a breakdown by category.
 - **Views that match how you plan.** Today, Upcoming, All, and Done (a dated record of what you finished).
 - **Repeating tasks.** Daily, weekdays, weekly, monthly. Finishing one schedules the next.
@@ -50,6 +51,8 @@ The app is **local-first**. Your tasks live in the browser, and every action rea
 - **Deletes** are kept as markers so other devices learn about them. The task's content is erased from the server straight away.
 - **Focus sessions** are append-only, so they never conflict.
 - **If the server loses data** (a free database gets replaced), the device notices its version is ahead and sends everything again.
+
+**Trade-offs I chose.** Conflicts are settled per task, not per field: if two devices edit different fields of the same task while both are offline, the later edit replaces the earlier one. That keeps the rule simple enough to reason about and test, and it is rare for one person's own devices. Data sits in `localStorage`, which is synchronous (so the first paint already has your tasks) and comfortably holds thousands of tasks, at the cost of a size cap that IndexedDB would not have.
 
 **No cold start for the user.** The API runs on a free host that sleeps when idle. That no longer matters to the person using the app: the interface loads from a CDN and a service worker, and works from local data. Sync happens in the background whenever the server is reachable. A scheduled GitHub Action also pings the API every ten minutes so sign-in is quick.
 

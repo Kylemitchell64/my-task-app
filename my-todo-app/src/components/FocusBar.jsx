@@ -1,15 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNow } from "../app/hooks.js";
 import { formatClock, formatMinutes } from "../lib/dates.js";
 import { elapsedSeconds, remainingSeconds } from "../lib/timer.js";
-import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, StopIcon } from "./icons.jsx";
+import Modal from "./Modal.jsx";
+import { CheckIcon, CloseIcon, ExpandIcon, PauseIcon, PlayIcon, StopIcon } from "./icons.jsx";
 
 const RADIUS = 15;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-function Ring({ fraction }) {
+function Ring({ fraction, size = 40 }) {
   return (
-    <svg className="ring" width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+    <svg className="ring" width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
       <circle className="ring__track" cx="20" cy="20" r={RADIUS} />
       <circle
         className="ring__value"
@@ -31,6 +32,10 @@ function Ring({ fraction }) {
 export default function FocusBar({ timerState, task, result, onPause, onResume, onExtend, onStop, onDiscard, onMarkDone, onAgain, onDismiss }) {
   const running = timerState?.segmentStart != null;
   const now = useNow(running, 250);
+  // Remembered per session, so focus mode never reopens by itself for the next one.
+  const [fullScreenFor, setFullScreenFor] = useState(null);
+  const fullScreen = timerState != null && fullScreenFor === timerState.sessionId;
+  const setFullScreen = (open) => setFullScreenFor(open ? timerState?.sessionId ?? null : null);
 
   const remaining = timerState ? remainingSeconds(timerState, now) : 0;
   const title = timerState ? (task?.title ?? "Focus session") : null;
@@ -72,10 +77,56 @@ export default function FocusBar({ timerState, task, result, onPause, onResume, 
           <button type="button" className="btn btn--soft btn--small" onClick={onStop} title="End now and keep the time" data-testid="focus-stop">
             <StopIcon size={13} /> Finish
           </button>
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => setFullScreen(true)}
+            aria-label="Open focus mode"
+            title="Focus mode"
+            data-testid="focus-expand"
+          >
+            <ExpandIcon size={16} />
+          </button>
           <button type="button" className="icon-btn" onClick={onDiscard} aria-label="Discard this session" title="Discard" data-testid="focus-discard">
             <CloseIcon size={16} />
           </button>
         </div>
+
+        {/* Focus mode: nothing on screen but the countdown and the one thing you are doing. */}
+        {fullScreen && (
+          <Modal title="Focus mode" onClose={() => setFullScreen(false)} size="focus" hideHeader testId="focus-mode">
+            <div className="focus-mode" data-paused={!running || undefined}>
+              <div className="focus-mode__ring">
+                <Ring fraction={elapsed / timerState.durationSec} size={260} />
+                <span className="focus-mode__time" role="timer" aria-live="off">
+                  {formatClock(remaining)}
+                </span>
+              </div>
+              <h2 className="focus-mode__title">{title}</h2>
+              {task?.description && <p className="focus-mode__notes">{task.description}</p>}
+              <div className="focus-mode__actions">
+                {running ? (
+                  <button type="button" className="btn btn--outline btn--large" onClick={onPause}>
+                    <PauseIcon size={16} /> Pause
+                  </button>
+                ) : (
+                  <button type="button" className="btn btn--primary btn--large" onClick={onResume}>
+                    <PlayIcon size={16} /> Resume
+                  </button>
+                )}
+                <button type="button" className="btn btn--outline btn--large" onClick={() => onExtend(5)}>
+                  +5m
+                </button>
+                <button type="button" className="btn btn--soft btn--large" onClick={onStop}>
+                  <StopIcon size={14} /> Finish
+                </button>
+              </div>
+              <button type="button" className="btn btn--ghost" onClick={() => setFullScreen(false)} data-testid="focus-mode-close">
+                Back to tasks
+              </button>
+            </div>
+          </Modal>
+        )}
       </div>
     );
   }

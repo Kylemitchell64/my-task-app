@@ -264,6 +264,14 @@ export function TimerIcon(props) {
   );
 }
 
+export function ExpandIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+    </Icon>
+  );
+}
+
 export function Logo({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" focusable="false">

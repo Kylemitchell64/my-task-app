@@ -398,6 +398,31 @@ test.describe("focus timer", () => {
     await expect(page.getByTestId("focus-result")).toContainText("7m of focus logged");
   });
 
+  test("focus mode shows just the countdown and the task", async ({ page }) => {
+    await page.clock.install();
+    await openApp(page);
+    await addTask(page, "Read chapter four 25m");
+    await page.getByTestId("task-open").click();
+    await page.getByTestId("edit-notes").fill("Pages 80 to 112");
+    await page.getByTestId("editor-focus").click();
+
+    await page.getByTestId("focus-expand").click();
+    const mode = page.getByTestId("focus-mode");
+    await expect(mode).toContainText("25:00");
+    await expect(mode).toContainText("Read chapter four");
+    await expect(mode).toContainText("Pages 80 to 112");
+
+    await mode.getByRole("button", { name: "Pause" }).click();
+    await expect(mode.getByRole("button", { name: "Resume" })).toBeVisible();
+
+    // Finishing from focus mode closes it and logs the time.
+    await mode.getByRole("button", { name: "Resume" }).click();
+    await page.clock.fastForward("03:00");
+    await mode.getByRole("button", { name: "Finish" }).click();
+    await expect(page.getByTestId("focus-mode")).toHaveCount(0);
+    await expect(page.getByTestId("focus-result")).toContainText("3m of focus logged");
+  });
+
   test("the countdown survives a reload", async ({ page }) => {
     await openApp(page);
     await addTask(page, "Long haul");

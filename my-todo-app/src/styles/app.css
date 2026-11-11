@@ -1562,6 +1562,77 @@ textarea {
   color: var(--surface);
 }
 
+/* Focus mode: the countdown, full screen. */
+
+.modal[data-size="focus"] {
+  padding: 0;
+}
+
+.modal[data-size="focus"] .modal__panel {
+  max-width: none;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.focus-mode {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+  text-align: center;
+  overflow-y: auto;
+}
+
+.focus-mode__ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.focus-mode__ring .ring circle {
+  stroke-width: 2;
+}
+
+.focus-mode[data-paused] .ring__value {
+  stroke: var(--text-3);
+}
+
+.focus-mode__time {
+  position: absolute;
+  font-size: clamp(2.6rem, 9vw, 3.6rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.focus-mode__title {
+  max-width: 640px;
+  font-size: 1.4rem;
+  font-weight: 650;
+}
+
+.focus-mode__notes {
+  max-width: 560px;
+  max-height: 20vh;
+  overflow-y: auto;
+  color: var(--text-2);
+  white-space: pre-wrap;
+}
+
+.focus-mode__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
 /* ---------- Toasts ---------- */
 
 .toasts {

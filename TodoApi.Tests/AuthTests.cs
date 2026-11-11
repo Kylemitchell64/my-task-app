@@ -252,6 +252,35 @@ public class ProductionTests : IClassFixture<ProductionApiFactory>
     }
 }
 
+public class PlaceholderKeyFactory : ProductionApiFactory
+{
+    protected override Dictionary<string, string> Settings => new() { ["Jwt:Key"] = JwtSettings.DevPlaceholderKey };
+}
+
+public class ShortKeyFactory : ApiFactory
+{
+    protected override Dictionary<string, string> Settings => new() { ["Jwt:Key"] = "too-short" };
+}
+
+public class StartupTests
+{
+    [Fact]
+    public void Production_refuses_to_start_with_the_placeholder_signing_key()
+    {
+        using var factory = new PlaceholderKeyFactory();
+        var error = Assert.Throws<InvalidOperationException>(() => factory.CreateClient());
+        Assert.Contains("placeholder", error.Message);
+    }
+
+    [Fact]
+    public void A_signing_key_that_is_too_short_is_refused()
+    {
+        using var factory = new ShortKeyFactory();
+        var error = Assert.Throws<InvalidOperationException>(() => factory.CreateClient());
+        Assert.Contains("at least 32", error.Message);
+    }
+}
+
 public class RateLimitedApiFactory : ApiFactory
 {
     protected override Dictionary<string, string> Settings => new()
