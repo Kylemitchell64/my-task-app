@@ -92,6 +92,8 @@ export default function App() {
     });
   }, [theme]);
 
+  const toggleTheme = useCallback(() => prefs.set({ theme: theme === "dark" ? "light" : "dark" }), [theme]);
+
   // ---------- Background services ----------
 
   useEffect(() => {
@@ -464,7 +466,7 @@ export default function App() {
       { id: "new", label: "New task", hint: "N", run: () => focusQuickAdd() },
       ...VIEWS.map((item, index) => ({ id: `view-${item.id}`, label: `Go to ${item.label}`, hint: String(index + 1), run: () => setView(item.id) })),
       { id: "focus", label: `Start a ${settings.focusMinutes}-minute focus session`, run: () => startFocus(null) },
-      { id: "theme", label: dark ? "Switch to light theme" : "Switch to dark theme", run: () => prefs.set({ theme: dark ? "light" : "dark" }) },
+      { id: "theme", label: dark ? "Switch to light theme" : "Switch to dark theme", run: toggleTheme },
       { id: "undo", label: "Undo last action", run: undo },
       { id: "settings", label: "Open settings", run: () => setDialog("settings") },
       { id: "shortcuts", label: "Show keyboard shortcuts", hint: "?", run: () => setDialog("shortcuts") },
@@ -472,13 +474,14 @@ export default function App() {
         ? { id: "sync", label: "Sync now", run: () => sync.syncNow() }
         : { id: "signin", label: "Sign in to sync across devices", run: () => setDialog("signin") },
     ];
-  }, [theme, settings.focusMinutes, session?.refreshToken, setView, startFocus, undo, focusQuickAdd]);
+  }, [theme, toggleTheme, settings.focusMinutes, session?.refreshToken, setView, startFocus, undo, focusQuickAdd]);
 
   // ---------- Render ----------
 
   const focusTask = timerState?.taskId ? data.tasks[timerState.taskId] : null;
   const resultTask = focusResult?.taskId ? data.tasks[focusResult.taskId] : null;
   const firstRun = tasks.length === 0;
+  const hasPending = Object.keys(data.meta.dirtyTasks).length + Object.keys(data.meta.dirtySessions).length > 0;
 
   const subtitle = searching
     ? `${list.total} ${list.total === 1 ? "match" : "matches"}`
@@ -569,13 +572,24 @@ export default function App() {
           category={activeCategory}
           session={session}
           status={status}
+          pending={hasPending}
           onView={setView}
           onCategory={setCategory}
+          theme={theme}
           onAccount={openAccount}
           onSettings={() => setDialog("settings")}
+          onToggleTheme={toggleTheme}
         />
       ) : (
-        <TopBar session={session} status={status} onAccount={openAccount} onSettings={() => setDialog("settings")} />
+        <TopBar
+          session={session}
+          status={status}
+          pending={hasPending}
+          theme={theme}
+          onAccount={openAccount}
+          onSettings={() => setDialog("settings")}
+          onToggleTheme={toggleTheme}
+        />
       )}
 
       <main className="main" id="main" tabIndex={-1}>

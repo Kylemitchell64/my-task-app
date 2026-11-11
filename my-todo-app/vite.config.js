@@ -16,7 +16,7 @@ export default defineConfig({
         description: "Plan what to learn, time your focus, and watch the streak grow.",
         start_url: "/",
         display: "standalone",
-        background_color: "#17141b",
+        background_color: "#141217",
         theme_color: "#7a2b8c",
         icons: [
           { src: "/icon-192.png", sizes: "192x192", type: "image/png" },

@@ -15,7 +15,7 @@
   --border-strong: #cfcbc2;
   --text: #1d1b20;
   --text-2: #57535e;
-  --text-3: #76717d;
+  --text-3: #6b6672;
 
   --accent: #7a2b8c;
   --accent-hover: #68207a;
@@ -31,9 +31,24 @@
   --ok: #26734a;
   --ok-soft: #e4f3ea;
 
+  /* Priority: one colour for rings and marks, a darker one that is readable as small text. */
   --priority-1: #2f74b5;
   --priority-2: #c27a12;
   --priority-3: #c8372d;
+  --priority-1-text: #235f99;
+  --priority-2-text: #8a5606;
+  --priority-3-text: #ad2a21;
+
+  /* Surfaces that sit above the page: an open task, the timer bar, dialogs. */
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+
+  /* Toasts and tooltips are dark-on-light inverted in the light theme. */
+  --toast-bg: #1d1b20;
+  --toast-text: #f6f5f2;
+  --toast-border: transparent;
+  --toast-danger-bg: #b83228;
+  --toast-danger-text: #ffffff;
 
   --shadow-1: 0 1px 2px rgb(30 20 40 / 6%);
   --shadow-2: 0 4px 16px rgb(30 20 40 / 10%), 0 1px 3px rgb(30 20 40 / 8%);
@@ -53,38 +68,62 @@
   color-scheme: light;
 }
 
+/*
+  Dark theme. The rules it follows:
+   - The page is a very dark grey, never pure black, so text does not smear and shadows
+     still have something to fall on.
+   - Height is shown with lightness: the closer a surface is to you, the lighter it is
+     (page < card < open task < dialog). Shadows alone are invisible on dark.
+   - Text is off-white at about 87% strength, secondary text about 65%. Pure white on
+     dark is harsh to read.
+   - Colours are lighter and less saturated than their light-theme versions, so they
+     glow less and keep at least 4.5:1 contrast against the surfaces they sit on.
+   - Large bright fills are avoided. Toasts and tooltips become raised dark surfaces
+     instead of inverting to white.
+*/
 :root[data-theme="dark"] {
-  --bg: #16131a;
-  --surface: #201c26;
-  --surface-2: #2a2531;
-  --surface-3: #342e3c;
-  --border: #332d3b;
-  --border-strong: #473f52;
-  --text: #ece8f1;
-  --text-2: #b6afc0;
-  --text-3: #8f8899;
+  --bg: #141217;
+  --surface: #1d1a22;
+  --surface-2: #27232d;
+  --surface-3: #322d39;
+  --surface-raised: #24202a;
+  --surface-overlay: #2a2631;
+  --border: #302b37;
+  --border-strong: #4a4354;
+  --text: #e7e3ec;
+  --text-2: #b4adbe;
+  --text-3: #9b94a6;
 
-  --accent: #d190e2;
-  --accent-hover: #dda6ec;
-  --accent-contrast: #1c0f21;
-  --accent-soft: #38253f;
-  --accent-soft-hover: #452d4e;
-  --accent-text: #dda6ec;
+  --accent: #cf9bdc;
+  --accent-hover: #dab1e5;
+  --accent-contrast: #1f1224;
+  --accent-soft: #35263b;
+  --accent-soft-hover: #412e48;
+  --accent-text: #d9afe4;
 
-  --danger: #f0867d;
-  --danger-soft: #3d2221;
-  --warn: #e8b05a;
-  --warn-soft: #3a2c16;
-  --ok: #7fcf9f;
-  --ok-soft: #1d3327;
+  --danger: #ee9289;
+  --danger-soft: #3a2422;
+  --warn: #e3b469;
+  --warn-soft: #382c18;
+  --ok: #86cba1;
+  --ok-soft: #1e3227;
 
-  --priority-1: #6aa9e0;
-  --priority-2: #e3a445;
-  --priority-3: #f0867d;
+  --priority-1: #74abdc;
+  --priority-2: #dba652;
+  --priority-3: #ee9289;
+  --priority-1-text: #8dbbe4;
+  --priority-2-text: #e0b168;
+  --priority-3-text: #f0a097;
 
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 30%);
-  --shadow-2: 0 4px 16px rgb(0 0 0 / 35%), 0 1px 3px rgb(0 0 0 / 30%);
-  --shadow-3: 0 16px 48px rgb(0 0 0 / 55%), 0 2px 8px rgb(0 0 0 / 35%);
+  --toast-bg: #37313f;
+  --toast-text: #e7e3ec;
+  --toast-border: #4a4354;
+  --toast-danger-bg: #4a2a27;
+  --toast-danger-text: #f6b7b0;
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 35%);
+  --shadow-2: 0 4px 16px rgb(0 0 0 / 40%), 0 1px 3px rgb(0 0 0 / 35%);
+  --shadow-3: 0 16px 48px rgb(0 0 0 / 60%), 0 2px 8px rgb(0 0 0 / 40%);
 
   color-scheme: dark;
 }
@@ -103,6 +142,7 @@ html {
 }
 
 body {
+  transition: background-color 0.2s ease, color 0.2s ease;
   margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
@@ -275,7 +315,7 @@ textarea {
 .input-suffix span {
   position: absolute;
   right: 10px;
-  color: var(--text-3);
+  color: var(--text-2);
   font-size: 0.87em;
   pointer-events: none;
 }
@@ -300,7 +340,12 @@ textarea {
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+
+.btn--ghost:disabled {
+  background: none;
 }
 
 .btn--primary {
@@ -350,8 +395,8 @@ textarea {
 }
 
 .btn--danger-solid {
-  background: var(--danger);
-  color: var(--surface);
+  background: var(--toast-danger-bg);
+  color: var(--toast-danger-text);
 }
 
 .btn--small {
@@ -462,15 +507,15 @@ textarea {
 }
 
 .segmented button[aria-checked="true"][data-priority="1"] {
-  color: var(--priority-1);
+  color: var(--priority-1-text);
 }
 
 .segmented button[aria-checked="true"][data-priority="2"] {
-  color: var(--priority-2);
+  color: var(--priority-2-text);
 }
 
 .segmented button[aria-checked="true"][data-priority="3"] {
-  color: var(--priority-3);
+  color: var(--priority-3-text);
 }
 
 .avatar {
@@ -491,6 +536,19 @@ textarea {
   width: 44px;
   height: 44px;
   font-size: 1.1rem;
+}
+
+/* Photos are toned down a little in the dark so they do not shine out of the page. */
+:root[data-theme="dark"] img.avatar {
+  filter: brightness(0.9);
+}
+
+.theme-toggle svg {
+  transition: rotate 0.3s ease;
+}
+
+.theme-toggle:hover svg {
+  rotate: 18deg;
 }
 
 /* ---------- Layout ---------- */
@@ -1006,6 +1064,7 @@ textarea {
 
 .task[data-expanded] {
   border-color: var(--border-strong);
+  background: var(--surface-raised);
   box-shadow: var(--shadow-2);
 }
 
@@ -1190,15 +1249,15 @@ textarea {
 }
 
 .meta--priority[data-priority="1"] {
-  color: var(--priority-1);
+  color: var(--priority-1-text);
 }
 
 .meta--priority[data-priority="2"] {
-  color: var(--priority-2);
+  color: var(--priority-2-text);
 }
 
 .meta--priority[data-priority="3"] {
-  color: var(--priority-3);
+  color: var(--priority-3-text);
   font-weight: 600;
 }
 
@@ -1385,7 +1444,7 @@ textarea {
   padding: 8px 10px 8px 12px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--surface-overlay);
   box-shadow: var(--shadow-3);
   transform: translateX(-50%);
   animation: rise 0.22s ease-out;
@@ -1520,9 +1579,10 @@ textarea {
   gap: 12px;
   max-width: 460px;
   padding: 9px 8px 9px 16px;
+  border: 1px solid var(--toast-border);
   border-radius: var(--radius);
-  background: var(--text);
-  color: var(--bg);
+  background: var(--toast-bg);
+  color: var(--toast-text);
   box-shadow: var(--shadow-2);
   font-size: 0.93rem;
   pointer-events: auto;
@@ -1539,8 +1599,8 @@ textarea {
 }
 
 .toast[data-tone="danger"] {
-  background: var(--danger);
-  color: var(--surface);
+  background: var(--toast-danger-bg);
+  color: var(--toast-danger-text);
 }
 
 .toast__action {
@@ -1609,7 +1669,7 @@ textarea {
   max-height: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius-l);
-  background: var(--surface);
+  background: var(--surface-overlay);
   box-shadow: var(--shadow-3);
   overflow: hidden;
   animation: dialog-in 0.18s ease-out;
@@ -2124,9 +2184,10 @@ textarea {
   left: 50%;
   z-index: 2;
   padding: 6px 10px;
+  border: 1px solid var(--toast-border);
   border-radius: var(--radius-s);
-  background: var(--text);
-  color: var(--bg);
+  background: var(--toast-bg);
+  color: var(--toast-text);
   box-shadow: var(--shadow-2);
   font-size: 0.78rem;
   line-height: 1.4;

@@ -1,13 +1,14 @@
 import { VIEWS } from "../lib/view.js";
 import { syncSummary } from "../app/syncText.js";
 import {
-  AlertIcon, CalendarIcon, ChartIcon, CloudIcon, CloudOffIcon, DoneIcon, HashIcon, ListIcon, Logo, SlidersIcon, SunIcon, SyncIcon,
+  AlertIcon, CalendarIcon, ChartIcon, CloudIcon, CloudOffIcon, DoneIcon, HashIcon, ListIcon, Logo, MoonIcon, SlidersIcon, SunIcon,
+  SyncIcon,
 } from "./icons.jsx";
 
 const VIEW_ICONS = { today: SunIcon, upcoming: CalendarIcon, all: ListIcon, done: DoneIcon, progress: ChartIcon };
 
 /** A compact picture of where the data is: this device only, synced, syncing, or stuck. */
-export function SyncBadge({ status, session, onClick }) {
+export function SyncBadge({ status, session, pending, onClick }) {
   const signedIn = Boolean(session?.refreshToken);
   let Icon = CloudIcon;
   let tone = "ok";
@@ -21,7 +22,8 @@ export function SyncBadge({ status, session, onClick }) {
     Icon = AlertIcon;
     tone = "warn";
     label = "Sign in again";
-  } else if (status.phase === "syncing") {
+  } else if (status.phase === "syncing" || (pending && status.phase === "idle")) {
+    // A change that is queued but not sent yet is not "synced".
     Icon = SyncIcon;
     tone = "busy";
     label = "Syncing…";
@@ -50,6 +52,24 @@ export function SyncBadge({ status, session, onClick }) {
   );
 }
 
+/** One click between light and dark. Settings also offers "follow the system". */
+export function ThemeToggle({ theme, onToggle }) {
+  const dark = theme === "dark";
+  return (
+    <button
+      type="button"
+      className="icon-btn theme-toggle"
+      onClick={onToggle}
+      aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
+      title={dark ? "Switch to light theme" : "Switch to dark theme"}
+      aria-pressed={dark}
+      data-testid="theme-toggle"
+    >
+      {dark ? <SunIcon size={17} /> : <MoonIcon size={17} />}
+    </button>
+  );
+}
+
 function Avatar({ user }) {
   if (user.avatarUrl) return <img className="avatar" src={user.avatarUrl} alt="" referrerPolicy="no-referrer" />;
   return (
@@ -59,7 +79,9 @@ function Avatar({ user }) {
   );
 }
 
-export function Sidebar({ view, counts, categories, category, session, status, onView, onCategory, onAccount, onSettings }) {
+export function Sidebar({
+  view, counts, categories, category, session, status, pending, theme, onView, onCategory, onAccount, onSettings, onToggleTheme,
+}) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -120,7 +142,7 @@ export function Sidebar({ view, counts, categories, category, session, status, o
       )}
 
       <div className="sidebar__footer">
-        <SyncBadge status={status} session={session} onClick={onAccount} />
+        <SyncBadge status={status} session={session} pending={pending} onClick={onAccount} />
         <div className="sidebar__account">
           {session && (
             <button type="button" className="account-btn" onClick={onSettings} title={session.user.email}>
@@ -128,6 +150,7 @@ export function Sidebar({ view, counts, categories, category, session, status, o
               <span className="account-btn__name">{session.user.name}</span>
             </button>
           )}
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
           <button type="button" className="icon-btn" onClick={onSettings} aria-label="Settings" title="Settings" data-testid="open-settings">
             <SlidersIcon size={17} />
           </button>
@@ -167,7 +190,7 @@ export function TabBar({ view, counts, onView }) {
 }
 
 /** Phone layout: brand, sync state and settings along the top. */
-export function TopBar({ session, status, onAccount, onSettings }) {
+export function TopBar({ session, status, pending, theme, onAccount, onSettings, onToggleTheme }) {
   return (
     <header className="topbar">
       <div className="brand">
@@ -175,7 +198,8 @@ export function TopBar({ session, status, onAccount, onSettings }) {
         <span className="brand__name">Learning Tracker</span>
       </div>
       <div className="topbar__actions">
-        <SyncBadge status={status} session={session} onClick={onAccount} />
+        <SyncBadge status={status} session={session} pending={pending} onClick={onAccount} />
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         <button type="button" className="icon-btn" onClick={onSettings} aria-label="Settings" data-testid="open-settings-mobile">
           {session ? <Avatar user={session.user} /> : <SlidersIcon size={18} />}
         </button>
