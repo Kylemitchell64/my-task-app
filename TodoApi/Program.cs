@@ -1,140 +1,211 @@
-using System.Text;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TodoApi.Data;
+using TodoApi.HealthChecks;
 using TodoApi.Models;
+using TodoApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
+var environment = builder.Environment;
 
-// Use TestConnection when running Cypress tests, DefaultConnection otherwise
-var connectionString = builder.Configuration.GetConnectionString(
-    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Test"
-        ? "TestConnection"
-        : "DefaultConnection"
-);
+// ---------- Limits ----------
 
-// Cap request body size to 100KB
-builder.Services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(o =>
-    o.Limits.MaxRequestBodySize = 100_000);
+// A full sync batch is well under this. Anything larger is rejected before it is read.
+builder.Services.Configure<KestrelServerOptions>(o => o.Limits.MaxRequestBodySize = 1_000_000);
 
-// Configure PostgreSQL
+// ---------- Database ----------
+
+var connectionString = DatabaseConfig.Resolve(configuration, environment);
 builder.Services.AddDbContext<TodoContext>(options =>
-    options.UseNpgsql(connectionString)
-);
+    options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(3)));
 
-// ASP.NET Core Identity
-builder.Services.AddIdentity<ApplicationUser, Microsoft.AspNetCore.Identity.IdentityRole>(o =>
-{
-    o.User.RequireUniqueEmail = true;
-    o.Lockout.MaxFailedAccessAttempts = 5;
-    o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-})
-.AddEntityFrameworkStores<TodoContext>()
-.AddDefaultTokenProviders();
-
-// JWT authentication
-var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY")
-    ?? builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("JWT_KEY env var is required");
-
-builder.Services.AddAuthentication(o =>
-{
-    o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(o =>
-{
-    o.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = "task-api",
-        ValidAudience = "task-app",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-    };
-})
-.AddGoogle(o =>
-{
-    o.ClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID")
-        ?? builder.Configuration["OAuth:Google:ClientId"]
-        ?? string.Empty;
-    o.ClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET")
-        ?? builder.Configuration["OAuth:Google:ClientSecret"]
-        ?? string.Empty;
-})
-.AddGitHub(o =>
-{
-    o.ClientId = Environment.GetEnvironmentVariable("GITHUB_CLIENT_ID")
-        ?? builder.Configuration["OAuth:GitHub:ClientId"]
-        ?? string.Empty;
-    o.ClientSecret = Environment.GetEnvironmentVariable("GITHUB_CLIENT_SECRET")
-        ?? builder.Configuration["OAuth:GitHub:ClientSecret"]
-        ?? string.Empty;
-    o.Scope.Add("user:email");
-});
-
-// Rate limiter: 30 requests per minute per IP
-builder.Services.AddRateLimiter(o =>
-{
-    o.AddFixedWindowLimiter("fixed", opt =>
-    {
-        opt.PermitLimit = 30;
-        opt.Window = TimeSpan.FromMinutes(1);
-    });
-    o.RejectionStatusCode = 429;
-});
-
-builder.Services.AddHealthChecks()
-    .AddCheck<TodoApi.HealthChecks.DatabaseHealthCheck>(
-        "database",
-        tags: new[] { "ready" }
-    );
-
-// Configure CORS — locked to frontend origin
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins(
-                "https://task-app-frontend-alpha.vercel.app",
-                "http://localhost:5173",
-                "http://localhost:5001"
-              )
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
-});
+// ---------- Identity ----------
 
 builder.Services
-    .AddControllers(options =>
+    .AddIdentity<ApplicationUser, IdentityRole>(o => o.User.RequireUniqueEmail = true)
+    .AddEntityFrameworkStores<TodoContext>()
+    .AddDefaultTokenProviders();
+
+// ---------- Authentication ----------
+
+var jwtKey = configuration["JWT_KEY"] ?? configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("JWT_KEY is required.");
+if (jwtKey.Length < 32)
+    throw new InvalidOperationException("JWT_KEY must be at least 32 characters.");
+if (environment.IsProduction() && jwtKey == JwtSettings.DevPlaceholderKey)
+    throw new InvalidOperationException("JWT_KEY is still the development placeholder. Set a real key.");
+
+var jwtSettings = new JwtSettings(jwtKey);
+builder.Services.AddSingleton(jwtSettings);
+
+var authentication = builder.Services
+    .AddAuthentication(o =>
     {
-        options.ReturnHttpNotAcceptable = true;
+        o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     })
-    .AddJsonOptions(options =>
+    .AddJwtBearer(o =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy =
-            System.Text.Json.JsonNamingPolicy.CamelCase;
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = JwtSettings.Issuer,
+            ValidAudience = JwtSettings.Audience,
+            IssuerSigningKey = jwtSettings.SigningKey,
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
     });
 
+// A provider is only registered when its credentials exist, so the API still runs
+// locally and in tests without any OAuth setup.
+var googleId = configuration["GOOGLE_CLIENT_ID"] ?? configuration["OAuth:Google:ClientId"];
+var googleSecret = configuration["GOOGLE_CLIENT_SECRET"] ?? configuration["OAuth:Google:ClientSecret"];
+if (!string.IsNullOrWhiteSpace(googleId) && !string.IsNullOrWhiteSpace(googleSecret))
+{
+    authentication.AddGoogle(o =>
+    {
+        o.ClientId = googleId;
+        o.ClientSecret = googleSecret;
+        o.ClaimActions.MapJsonKey(ExternalClaims.Avatar, "picture");
+        o.ClaimActions.MapJsonKey(ExternalClaims.EmailVerified, "email_verified");
+    });
+}
+
+var gitHubId = configuration["GITHUB_CLIENT_ID"] ?? configuration["OAuth:GitHub:ClientId"];
+var gitHubSecret = configuration["GITHUB_CLIENT_SECRET"] ?? configuration["OAuth:GitHub:ClientSecret"];
+if (!string.IsNullOrWhiteSpace(gitHubId) && !string.IsNullOrWhiteSpace(gitHubSecret))
+{
+    authentication.AddGitHub(o =>
+    {
+        o.ClientId = gitHubId;
+        o.ClientSecret = gitHubSecret;
+        o.Scope.Add("user:email");
+        o.ClaimActions.MapJsonKey(ExternalClaims.Avatar, "avatar_url");
+    });
+}
+
+// ---------- App settings ----------
+
+var frontendUrl = (configuration["FRONTEND_URL"] ?? configuration["FrontendUrl"] ?? "http://localhost:5173")
+    .TrimEnd('/');
+var devLoginEnabled = !environment.IsProduction() && configuration.GetValue("Auth:DevLogin", false);
+
+builder.Services.AddSingleton(new AppSettings(frontendUrl, devLoginEnabled));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<SyncService>();
+
+// ---------- Rate limiting ----------
+
+var apiPerMinute = configuration.GetValue("RateLimits:ApiPerMinute", 120);
+var authPerMinute = configuration.GetValue("RateLimits:AuthPerMinute", 60);
+
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.OnRejected = (context, _) =>
+    {
+        context.HttpContext.Response.Headers.RetryAfter = "60";
+        return ValueTask.CompletedTask;
+    };
+
+    // Signed-in traffic is counted per account, so one busy user cannot starve another.
+    o.AddPolicy(RateLimitPolicies.Api, http => RateLimitPartition.GetTokenBucketLimiter(
+        http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? ClientIp(http),
+        _ => new TokenBucketRateLimiterOptions
+        {
+            TokenLimit = apiPerMinute,
+            TokensPerPeriod = apiPerMinute,
+            ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+
+    o.AddPolicy(RateLimitPolicies.Auth, http => RateLimitPartition.GetFixedWindowLimiter(
+        ClientIp(http),
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = authPerMinute,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+});
+
+// ---------- CORS ----------
+
+var allowedOrigins = new[]
+    {
+        frontendUrl,
+        "https://task-app-frontend-alpha.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "http://localhost:5001",
+    }
+    .Concat((configuration["CORS_ORIGINS"] ?? string.Empty)
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    .Select(origin => origin.TrimEnd('/'))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
+builder.Services.AddCors(options =>
+{
+    // Tokens travel in the Authorization header, never in cookies, so credentials stay off.
+    options.AddDefaultPolicy(policy => policy
+        .WithOrigins(allowedOrigins)
+        .WithHeaders("Authorization", "Content-Type")
+        .WithMethods("GET", "POST", "DELETE")
+        .SetPreflightMaxAge(TimeSpan.FromHours(1)));
+});
+
+// ---------- MVC ----------
+
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
+
+builder.Services.AddProblemDetails();
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Trust Render's reverse proxy so OAuth redirect URIs use https://
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+// The API only receives traffic through the host's reverse proxy, which sets these headers.
+// Without them OAuth redirect URIs would be built with http:// instead of https://.
+var forwardedHeaders = new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+};
+forwardedHeaders.KnownNetworks.Clear();
+forwardedHeaders.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeaders);
 
-app.UseCors("AllowFrontend");
+app.UseExceptionHandler();
+app.UseStatusCodePages();
+
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers.XContentTypeOptions = "nosniff";
+    headers.XFrameOptions = "DENY";
+    headers["Referrer-Policy"] = "no-referrer";
+    // Nothing this API returns should be kept by a browser or a proxy.
+    headers.CacheControl = "no-store";
+    if (!app.Environment.IsDevelopment())
+    {
+        headers.StrictTransportSecurity = "max-age=31536000; includeSubDomains";
+    }
+    await next();
+});
 
 if (app.Environment.IsDevelopment())
 {
@@ -142,29 +213,52 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.Use(async (context, next) =>
-{
-    context.Response.OnStarting(() =>
-    {
-        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-        return Task.CompletedTask;
-    });
-    await next();
-});
-
 app.UseRouting();
-app.UseRateLimiter();
+app.UseCors();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/api/diagnostic/health");
 
-// Auto-migrate DB on startup
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<TodoContext>();
-    db.Database.Migrate();
-}
+// Cheap liveness check: no database, no auth. This is what a keep-warm ping should hit.
+app.MapMethods("/healthz", ["GET", "HEAD"], () => Results.Text("ok"));
+app.MapGet("/", () => Results.Ok(new { service = "TodoApi", status = "ok" }));
+
+await MigrateAsync(app);
 
 app.Run();
+
+static string ClientIp(HttpContext http) =>
+    http.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+// Applies pending migrations. A free database can take a moment to wake, so this retries,
+// and if the database never answers the API still starts and reports unhealthy instead
+// of crash-looping.
+static async Task MigrateAsync(WebApplication app)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    const int attempts = 5;
+
+    for (var attempt = 1; attempt <= attempts; attempt++)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<TodoContext>();
+            await db.Database.MigrateAsync();
+            return;
+        }
+        catch (Exception ex) when (attempt < attempts)
+        {
+            logger.LogWarning(ex, "Database not ready (attempt {Attempt} of {Attempts}); retrying", attempt, attempts);
+            await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "Could not migrate the database. Starting anyway; requests will fail until it is reachable.");
+        }
+    }
+}
+
+public partial class Program;

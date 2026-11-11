@@ -37,7 +37,6 @@ artifacts/
 
 # Environment
 .env
-appsettings.Development.json
 
 # Test results
 TestResults/
@@ -54,3 +53,7 @@ docker-compose.override.yml
 
 # Kubernetes
 k8s/base/secrets.yaml
+
+# Playwright
+test-results/
+playwright-report/

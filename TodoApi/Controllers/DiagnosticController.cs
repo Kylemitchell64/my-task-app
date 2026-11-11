@@ -1,66 +1,62 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace TodoApi.Controllers
+namespace TodoApi.Controllers;
+
+[Route("api/diagnostic")]
+[ApiController]
+public class DiagnosticController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class DiagnosticController : ControllerBase
+    private readonly HealthCheckService _healthCheckService;
+    private readonly IConfiguration _configuration;
+
+    public DiagnosticController(HealthCheckService healthCheckService, IConfiguration configuration)
     {
-        private readonly HealthCheckService _healthCheckService;
-        private readonly IConfiguration _configuration;
-
-        public DiagnosticController(
-            HealthCheckService healthCheckService,
-            IConfiguration configuration)
-        {
-            _healthCheckService = healthCheckService;
-            _configuration = configuration;
-        }
-
-        [HttpGet("status")]
-        public async Task<ActionResult> Status()
-        {
-            await Task.CompletedTask;
-            return Ok("okay");
-        }
-
-        [HttpGet("health")]
-        public async Task<IActionResult> Health()
-        {
-            var report = await _healthCheckService.CheckHealthAsync();
-
-            var response = new
-            {
-                status = report.Status.ToString(),
-                totalDuration = report.TotalDuration,
-                entries = report.Entries.Select(e => new
-                {
-                    name = e.Key,
-                    status = e.Value.Status.ToString(),
-                    description = e.Value.Description,
-                    exception = e.Value.Exception?.Message
-                })
-            };
-
-            var statusCode = report.Status == HealthStatus.Healthy ? 200 : 503;
-            return StatusCode(statusCode, response);
-        }
-
-        [HttpGet("readiness")]
-        public async Task<IActionResult> Readiness()
-        {
-            var report = await _healthCheckService.CheckHealthAsync();
-            if (report.Status != HealthStatus.Healthy)
-                return StatusCode(503, new { status = "NotReady" });
-            return Ok(new { status = "Ready" });
-        }
-
-        [HttpGet("serviceinfo")]
-        public IActionResult ServiceInfo()
-        {
-            var version = _configuration["VERSION"] ?? "unknown";
-            return Ok(new { service = "TodoApi", version, timestamp = DateTime.UtcNow });
-        }
+        _healthCheckService = healthCheckService;
+        _configuration = configuration;
     }
+
+    /// <summary>Answers without touching the database. Used to wake and keep the service warm.</summary>
+    [HttpGet("status")]
+    [HttpHead("status")]
+    public IActionResult Status() => Ok("okay");
+
+    /// <summary>Checks the database too.</summary>
+    [HttpGet("health")]
+    public async Task<IActionResult> Health(CancellationToken ct)
+    {
+        var report = await _healthCheckService.CheckHealthAsync(ct);
+
+        // Exception text can carry host names and connection details, so it stays in the logs.
+        var response = new
+        {
+            status = report.Status.ToString(),
+            totalDuration = report.TotalDuration,
+            entries = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+            }),
+        };
+
+        return StatusCode(report.Status == HealthStatus.Healthy ? 200 : 503, response);
+    }
+
+    [HttpGet("readiness")]
+    public async Task<IActionResult> Readiness(CancellationToken ct)
+    {
+        var report = await _healthCheckService.CheckHealthAsync(ct);
+        return report.Status == HealthStatus.Healthy
+            ? Ok(new { status = "Ready" })
+            : StatusCode(503, new { status = "NotReady" });
+    }
+
+    [HttpGet("serviceinfo")]
+    public IActionResult ServiceInfo() => Ok(new
+    {
+        service = "TodoApi",
+        version = _configuration["VERSION"] ?? "unknown",
+        timestamp = DateTime.UtcNow,
+    });
 }
