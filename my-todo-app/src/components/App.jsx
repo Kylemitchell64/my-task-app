@@ -403,6 +403,8 @@ export default function App() {
         return;
       }
       if (typing || mod || event.altKey) return;
+      // Inside an open task's form, letters belong to the form. It handles Escape itself.
+      if (target instanceof HTMLElement && target.closest(".editor")) return;
 
       let handled = true;
       switch (key) {
@@ -440,7 +442,6 @@ export default function App() {
           break;
         }
         case "Delete":
-        case "Backspace":
           handled = onFocusedTask((id) => state.actions.remove(id));
           break;
         case "Escape":
@@ -481,6 +482,11 @@ export default function App() {
   const focusTask = timerState?.taskId ? data.tasks[timerState.taskId] : null;
   const resultTask = focusResult?.taskId ? data.tasks[focusResult.taskId] : null;
   const firstRun = tasks.length === 0;
+  // What is left to do: each open task's estimate minus the focus time already spent on it.
+  const plannedMinutes = tasks.reduce(
+    (sum, task) => (task.isCompleted ? sum : sum + Math.max(0, task.estimatedMinutes - (focusSeconds.get(task.id) ?? 0) / 60)),
+    0
+  );
   const hasPending = Object.keys(data.meta.dirtyTasks).length + Object.keys(data.meta.dirtySessions).length > 0;
 
   const subtitle = searching
@@ -488,7 +494,7 @@ export default function App() {
     : {
         today: `${weekdayName(today)}, ${formatDay(today, today)}`,
         upcoming: `${counts.upcoming} scheduled`,
-        all: `${counts.all} open`,
+        all: counts.all > 0 ? `${counts.all} open · ${formatMinutes(plannedMinutes)} planned` : "Nothing open",
         done: `${counts.done} finished`,
         progress: "Your week at a glance",
       }[view];
@@ -667,6 +673,27 @@ export default function App() {
               Showing <strong>#{activeCategory}</strong>
               <button type="button" className="icon-btn" onClick={() => setCategory(null)} aria-label="Clear category filter">
                 <CloseIcon size={14} />
+              </button>
+            </div>
+          )}
+
+          {view === "today" && !searching && !activeCategory && counts.overdue > 0 && (
+            <div className="notice" data-testid="overdue-notice">
+              <span>
+                {counts.overdue} overdue {counts.overdue === 1 ? "task" : "tasks"}
+              </span>
+              <button
+                type="button"
+                className="btn btn--soft btn--small"
+                onClick={() => {
+                  const moved = store.rescheduleOverdue(today);
+                  toasts.show(`Moved ${moved} ${moved === 1 ? "task" : "tasks"} to today.`, {
+                    action: { label: "Undo", run: () => store.undo() },
+                  });
+                }}
+                data-testid="reschedule-overdue"
+              >
+                Move to today
               </button>
             </div>
           )}

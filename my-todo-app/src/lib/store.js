@@ -256,6 +256,15 @@ export function createStore({ storage, now = () => Date.now(), newId = randomId,
     return next;
   }
 
+  /** Moves every unfinished task that is past due to today. Returns how many moved. */
+  function rescheduleOverdue(today = todayKey(new Date(clock()))) {
+    const changes = Object.values(state.tasks)
+      .filter((t) => t.deletedAt == null && !t.isCompleted && t.dueDate && t.dueDate < today)
+      .map((t) => ({ ...t, dueDate: today, updatedAt: stamp(t) }));
+    putTasks(changes, { undo: "Moved to today" });
+    return changes.length;
+  }
+
   function deleteTask(id) {
     const current = liveTask(id);
     if (!current) return;
@@ -505,6 +514,7 @@ export function createStore({ storage, now = () => Date.now(), newId = randomId,
     updateTask,
     toggleTask,
     deleteTask,
+    rescheduleOverdue,
     moveTask,
     undo,
     canUndo,

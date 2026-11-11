@@ -156,6 +156,26 @@ describe("deleting and undo", () => {
   });
 });
 
+describe("overdue tasks", () => {
+  it("moves them all to today in one undoable step", () => {
+    const { store, tasks } = setup();
+    store.addTask({ title: "late", dueDate: "2026-11-01" });
+    store.addTask({ title: "later", dueDate: "2026-11-09" });
+    store.addTask({ title: "future", dueDate: "2026-12-01" });
+    store.addTask({ title: "undated" });
+    const done = store.addTask({ title: "done late", dueDate: "2026-11-01" });
+    store.toggleTask(done.id);
+
+    expect(store.rescheduleOverdue("2026-11-11")).toBe(2);
+    const due = () => Object.fromEntries(tasks().map((t) => [t.title, t.dueDate]));
+    expect(due()).toEqual({ late: "2026-11-11", later: "2026-11-11", future: "2026-12-01", undated: null, "done late": "2026-11-01" });
+
+    expect(store.undo()).toBe("Moved to today");
+    expect(due()).toMatchObject({ late: "2026-11-01", later: "2026-11-09" });
+    expect(store.rescheduleOverdue("2026-11-01")).toBe(0);
+  });
+});
+
 describe("manual order", () => {
   function three() {
     const ctx = setup();

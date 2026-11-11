@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     // Makes the app installable and lets it open with no network at all.
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       injectRegister: null, // registered from src/main.jsx
       includeAssets: ["favicon.svg", "apple-touch-icon.png", "theme.js"],
       manifest: {

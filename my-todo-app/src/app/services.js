@@ -21,6 +21,13 @@ function safeStorage() {
 }
 
 const storage = safeStorage();
+
+// The previous version of this app kept its login token under this key. It is no longer used.
+try {
+  storage?.removeItem("jwt");
+} catch {
+  // Nothing to clean up.
+}
 const locks = typeof navigator !== "undefined" && navigator.locks ? navigator.locks : null;
 
 export const toasts = createToasts();

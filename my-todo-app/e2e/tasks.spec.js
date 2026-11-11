@@ -252,6 +252,18 @@ test.describe("finding things", () => {
     await expect(page.getByRole("heading", { name: /Overdue/ })).toBeVisible();
   });
 
+  test("overdue tasks can all be moved to today in one step, and back", async ({ page }) => {
+    await page.getByTestId("nav-today").click();
+    await page.getByTestId("reschedule-overdue").click();
+
+    await expect(page.getByTestId("overdue-notice")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: /Overdue/ })).toHaveCount(0);
+    await expect(page.getByTestId("task-item")).toHaveCount(2);
+
+    await page.getByTestId("toast").getByRole("button", { name: "Undo" }).click();
+    await expect(page.getByTestId("overdue-notice")).toBeVisible();
+  });
+
   test("Upcoming shows only future tasks", async ({ page }) => {
     await page.getByTestId("nav-upcoming").click();
     await expect(page.getByTestId("task-title")).toHaveText(["Due later"]);

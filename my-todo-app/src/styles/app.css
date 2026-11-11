@@ -931,6 +931,21 @@ textarea {
   color: inherit;
 }
 
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 8px 8px 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--danger);
+  font-size: 0.93rem;
+  font-weight: 600;
+}
+
 /* ---------- Quick add ---------- */
 
 .quick-add {
