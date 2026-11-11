@@ -44,6 +44,7 @@ export function SyncBadge({ status, session, pending, onClick }) {
       data-tone={tone}
       onClick={onClick}
       title={syncSummary(status, signedIn)}
+      aria-label={label}
       data-testid="sync-badge"
     >
       <Icon size={15} />

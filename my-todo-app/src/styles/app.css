@@ -773,6 +773,14 @@ textarea {
 
 .topbar .brand__name {
   font-size: 1rem;
+  white-space: nowrap;
+}
+
+/* On narrow phones the sync state shrinks to its icon, unless it needs attention. */
+@media (max-width: 440px) {
+  .topbar .sync-badge:not([data-tone="warn"]) span {
+    display: none;
+  }
 }
 
 .topbar__actions {
@@ -1803,7 +1811,8 @@ textarea {
   flex-direction: column;
 }
 
-.toggle small {
+.toggle small,
+.field small {
   color: var(--text-3);
   font-size: 0.85rem;
 }
@@ -2178,7 +2187,12 @@ textarea {
   font-size: 0.78rem;
 }
 
-.chart__col[data-today] .chart__empty {
+.chart__col[data-today] .chart__label {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.chart__empty {
   position: absolute;
   inset: 0 0 auto;
   display: grid;
@@ -2187,11 +2201,6 @@ textarea {
   color: var(--text-3);
   font-size: 0.9rem;
   pointer-events: none;
-}
-
-.chart__label {
-  color: var(--text);
-  font-weight: 700;
 }
 
 .chart__tip {
@@ -2320,7 +2329,7 @@ textarea {
     display: none;
   }
 
-  .modal {
+  .modal[open] {
     padding: 0;
     place-items: end center;
   }
@@ -2331,7 +2340,7 @@ textarea {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .modal[data-size="palette"] {
+  .modal[open][data-size="palette"] {
     place-items: start center;
     padding: 10px;
   }
