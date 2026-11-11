@@ -27,8 +27,8 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
       - name: Build
@@ -45,8 +45,8 @@ jobs:
       run:
         working-directory: my-todo-app
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -75,21 +75,24 @@ jobs:
       run:
         working-directory: my-todo-app
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: my-todo-app/package-lock.json
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # The runner image already has the system libraries Chromium needs, so only the
+      # browser itself is downloaded. Retried once because downloads occasionally flake.
+      - name: Install Chromium
+        run: npx playwright install chromium || npx playwright install chromium
       - name: Build the API ahead of time
         run: dotnet build ../TodoApi
       - run: npm run e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: playwright-report
