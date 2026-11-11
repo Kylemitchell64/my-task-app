@@ -30,6 +30,7 @@ export default function SettingsDialog({ onClose, onSignIn, onSignOut, onDeleteA
   const fileRef = useRef(null);
   const [confirming, setConfirming] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [minutesDraft, setMinutesDraft] = useState(null);
 
   const signedIn = Boolean(session?.refreshToken);
 
@@ -153,15 +154,24 @@ export default function SettingsDialog({ onClose, onSignIn, onSignOut, onDeleteA
         <section>
           <h3>Focus timer</h3>
           <label className="field field--inline">
-            <span>Default length when a task has no estimate to use</span>
+            <span className="toggle__text">
+              <span>Session length</span>
+              <small>Shorter if the task has less time left on its estimate.</small>
+            </span>
             <span className="input-suffix">
               <input
                 type="number"
                 inputMode="numeric"
                 min={1}
                 max={180}
-                value={settings.focusMinutes}
-                onChange={(event) => prefs.set({ focusMinutes: event.target.value })}
+                value={minutesDraft ?? settings.focusMinutes}
+                onChange={(event) => setMinutesDraft(event.target.value)}
+                onBlur={() => {
+                  // Saved when you leave the field, so it can be cleared and retyped freely.
+                  if (minutesDraft != null) prefs.set({ focusMinutes: minutesDraft });
+                  setMinutesDraft(null);
+                }}
+                data-testid="focus-minutes"
               />
               <span aria-hidden="true">min</span>
             </span>

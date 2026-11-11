@@ -3,7 +3,10 @@ kind: Deployment
 metadata:
   name: api
 spec:
-  replicas: 2
+  # One replica on purpose. The OAuth sign-in handshake is protected with keys held in
+  # the pod's memory, so a second replica could not finish a sign-in the first one began.
+  # To scale out, persist ASP.NET Core Data Protection keys to shared storage first.
+  replicas: 1
   selector:
     matchLabels:
       app: api
@@ -25,9 +28,34 @@ spec:
             secretKeyRef:
               name: db-credentials
               key: connection-string
+        - name: JWT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: jwt-key
+        - name: FRONTEND_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: frontend-url
+        # Optional: sign-in providers. A provider is only switched on when both values exist.
+        - name: GOOGLE_CLIENT_ID
+          valueFrom: { secretKeyRef: { name: app-secrets, key: google-client-id, optional: true } }
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom: { secretKeyRef: { name: app-secrets, key: google-client-secret, optional: true } }
+        - name: GITHUB_CLIENT_ID
+          valueFrom: { secretKeyRef: { name: app-secrets, key: github-client-id, optional: true } }
+        - name: GITHUB_CLIENT_SECRET
+          valueFrom: { secretKeyRef: { name: app-secrets, key: github-client-secret, optional: true } }
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 20
         readinessProbe:
           httpGet:
-            path: /api/diagnostic/health
+            path: /api/diagnostic/readiness
             port: 5000
           initialDelaySeconds: 5
           periodSeconds: 10

@@ -1,0 +1,28 @@
+name: Keep API warm
+
+# The free API host puts the service to sleep after 15 minutes without traffic, and waking
+# it takes most of a minute. A request every 10 minutes keeps it awake, so signing in and
+# the first sync are fast. The app itself never waits on this: it runs from the device.
+#
+# Free hosting allows enough hours for one always-on service. To change the address, set a
+# repository variable named API_URL. To stop pinging, disable this workflow.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping the API
+        env:
+          API_URL: ${{ vars.API_URL || 'https://my-task-app-bt7p.onrender.com' }}
+        run: |
+          curl --silent --show-error --fail --max-time 90 --retry 2 --retry-delay 5 \
+            --output /dev/null --write-out "status %{http_code} in %{time_total}s\n" \
+            "$API_URL/api/diagnostic/status"

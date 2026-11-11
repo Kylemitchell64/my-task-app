@@ -14,6 +14,21 @@ spec:
                 name: api
                 port:
                   number: 5000
+          # Where Google and GitHub send the browser back after sign-in.
+          - path: /signin-
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 5000
+          - path: /healthz
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 5000
           - path: /
             pathType: Prefix
             backend:

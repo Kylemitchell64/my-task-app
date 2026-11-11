@@ -1,25 +1,33 @@
+# Runs the whole app locally: database, API and the built frontend behind NGINX.
+#   docker compose up --build   ->   http://localhost:8081
+#
+# This is a development setup. It turns on the password-less dev sign-in, which the API
+# refuses to enable in Production.
+
 services:
   postgres:
-    image: postgres:15
+    image: postgres:16
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Killapilla200!
-      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: tasks
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   api:
     build:
       context: ./TodoApi
-      dockerfile: Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=Killapilla200!
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=tasks;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      JWT_KEY: ${JWT_KEY:-local-docker-only-key-change-me-0123456789abcdef}
+      Auth__DevLogin: "true"
+      FRONTEND_URL: http://localhost:8081
     depends_on:
       postgres:
         condition: service_healthy
@@ -27,9 +35,11 @@ services:
   frontend:
     build:
       context: ./my-todo-app
-      dockerfile: Dockerfile
+      args:
+        # Empty means "same origin": NGINX forwards /api to the API container.
+        VITE_API_URL: ""
     ports:
-      - "80:80"
+      - "8081:80"
     depends_on:
       - api
 

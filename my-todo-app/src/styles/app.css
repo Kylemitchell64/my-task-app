@@ -1742,7 +1742,8 @@ textarea {
   gap: 8px;
 }
 
-.settings .segmented {
+.settings .segmented,
+.settings section > .btn {
   align-self: flex-start;
 }
 

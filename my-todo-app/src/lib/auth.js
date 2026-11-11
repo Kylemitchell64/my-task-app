@@ -6,7 +6,9 @@
 
 export const AUTH_KEY = "lt.auth.v1";
 
-export const API_BASE = (import.meta.env.VITE_API_URL || "https://my-task-app-bt7p.onrender.com").replace(/\/+$/, "");
+// Set VITE_API_URL at build time to point somewhere else. An empty value means
+// "the same origin that served this page", for setups where a proxy sits in front of both.
+export const API_BASE = (import.meta.env.VITE_API_URL ?? "https://my-task-app-bt7p.onrender.com").replace(/\/+$/, "");
 
 // The free API host sleeps when idle and can take most of a minute to wake.
 const REQUEST_TIMEOUT_MS = 75_000;
