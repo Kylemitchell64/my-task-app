@@ -156,6 +156,23 @@ OAuth redirect URIs to register with the providers: `https://<api-host>/signin-g
 | --- | --- |
 | `VITE_API_URL` | The API's address, set at build time. Empty means the same origin as the page. |
 
+### API endpoints
+
+| Method and path | Auth | Purpose |
+| --- | --- | --- |
+| `POST /api/sync` | token | Send changed rows, receive unseen rows. The only data endpoint. |
+| `GET /api/auth/providers` | none | Which sign-in options are switched on. |
+| `GET /api/auth/login/{provider}` | none | Start a Google or GitHub sign-in. |
+| `POST /api/auth/exchange` | none | Trade the single-use code for tokens. |
+| `POST /api/auth/refresh` | none | Trade a refresh token for a new pair. |
+| `POST /api/auth/logout` | none | End this device's session. |
+| `GET /api/auth/me` | token | The signed-in user. |
+| `DELETE /api/account` | token | Delete the account and all its data. |
+| `GET /healthz` | none | Liveness. No database access. |
+| `GET /api/diagnostic/health` | none | Health including the database. |
+
+Swagger UI is available at `/swagger` in Development.
+
 ---
 
 ## Deploying for free

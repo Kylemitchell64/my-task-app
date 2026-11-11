@@ -516,6 +516,25 @@ async function violations(page) {
   );
 }
 
+test.describe("when the browser blocks storage", () => {
+  test("the app still works and says plainly that nothing will be kept", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(window, "localStorage", {
+        get() {
+          throw new DOMException("The operation is insecure.", "SecurityError");
+        },
+      });
+    });
+    await openApp(page);
+
+    await expect(page.getByTestId("toast")).toContainText("blocking storage");
+    await addTask(page, "Still usable");
+    await page.getByTestId("task-complete-checkbox").click();
+    await page.getByTestId("nav-done").click();
+    await expect(page.getByTestId("task-title")).toHaveText(["Still usable"]);
+  });
+});
+
 test.describe("accessibility", () => {
   for (const theme of ["light", "dark"]) {
     test(`no automatically detectable issues (${theme})`, async ({ page }) => {

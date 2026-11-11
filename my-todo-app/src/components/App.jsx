@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMediaQuery, useStoreState, useSyncStatus, useToday } from "../app/hooks.js";
-import { auth, onFocusFinished, prefs, store, sync, timer, toasts, watchOtherTabs } from "../app/services.js";
+import { auth, hasStorage, onFocusFinished, prefs, store, sync, timer, toasts, watchOtherTabs } from "../app/services.js";
 import { notify, playChime, unlockSound } from "../app/sound.js";
 import { addDays, formatDay, formatDayHeading, formatDue, formatMinutes, weekdayName } from "../lib/dates.js";
 import { allCategories, categoryCounts, DEFAULT_ESTIMATE, focusSecondsByTask, liveTasks } from "../lib/store.js";
@@ -97,6 +97,13 @@ export default function App() {
   // ---------- Background services ----------
 
   useEffect(() => {
+    if (!hasStorage) {
+      // Some private-browsing modes block storage. The app still runs, but only in memory.
+      toasts.show("This browser is blocking storage, so tasks will be gone when this tab closes. Sign in to keep them.", {
+        tone: "danger",
+        duration: 15_000,
+      });
+    }
     const stopSync = sync.start({ window, document });
     const stopWatching = watchOtherTabs();
     return () => {
