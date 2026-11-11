@@ -19,7 +19,12 @@ var environment = builder.Environment;
 // ---------- Limits ----------
 
 // A full sync batch is well under this. Anything larger is rejected before it is read.
-builder.Services.Configure<KestrelServerOptions>(o => o.Limits.MaxRequestBodySize = 1_000_000);
+builder.Services.Configure<KestrelServerOptions>(o =>
+{
+    o.Limits.MaxRequestBodySize = 1_000_000;
+    // No need to tell every caller which server software this is.
+    o.AddServerHeader = false;
+});
 
 // ---------- Database ----------
 
